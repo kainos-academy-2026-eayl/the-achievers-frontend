@@ -4,6 +4,8 @@ import nunjucks from 'nunjucks';
 export function createApp(): Express {
   const app = express();
 
+  app.use(express.static('public'));
+
   nunjucks.configure('views', {
     autoescape: true,
     express: app,
@@ -11,7 +13,7 @@ export function createApp(): Express {
   app.set('view engine', 'njk');
 
   app.get('/', (_req: Request, res: Response) => {
-    res.render('home', { title: 'Achievers' });
+    res.render('home-page', { title: 'Home Page' });
   });
 
   app.get('/health', (_req: Request, res: Response) => {
