@@ -1,7 +1,7 @@
 {
-  "name": "technologist-academy-node-service-template",
+  "name": "achievers-frontend",
   "version": "1.0.0",
-  "description": "A template repository for node services developed in the Technologist Academy",
+  "description": "Frontend application for Achievers",
   "type": "module",
   "main": "dist/index.js",
   "scripts": {
@@ -16,12 +16,14 @@
   "devDependencies": {
     "@types/express": "5.0.6",
     "@types/node": "26.4.1",
+    "@types/nunjucks": "^3.2.6",
     "esbuild": "0.28.2",
     "tsx": "4.23.13",
     "typescript": "7.0.2"
   },
   "dependencies": {
     "dotenv": "17.4.2",
-    "express": "5.2.1"
+    "express": "5.2.1",
+    "nunjucks": "^3.2.4"
   }
 }
