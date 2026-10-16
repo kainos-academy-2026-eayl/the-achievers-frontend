@@ -1,9 +1,97 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <title>{{ title }}</title>
-    <link rel="stylesheet" href="/css/main.css">
-    <link rel="stylesheet" href="/css/home-page.css">
-  </head>
-  <body><h1>Welcome to {{ title }}</h1></body>
-</html>
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/home-page.css">
+{% endblock %}
+
+{% block content %}
+
+  <!-- HERO: main welcome message and primary call to action -->
+  <section class="hero" aria-labelledby="hero-title">
+    <div class="container hero-inner">
+      <h1 id="hero-title">Welcome to Cue Corner</h1>
+      <p class="hero-sub">Everything You Need for the Perfect Shot</p>
+      <a class="btn btn-gold btn-large" href="/shop">Shop Now</a>
+    </div>
+  </section>
+
+  <!-- FEATURED CATEGORIES: four category cards -->
+  <section class="section" aria-labelledby="categories-title">
+    <div class="container">
+      <h2 id="categories-title" class="section-title">Featured Categories</h2>
+      <div class="grid grid-4">
+        <a class="card category-card" href="/categories/pool-cues">
+          <div class="placeholder placeholder-cue" aria-hidden="true"></div>
+          <h3>Pool Cues</h3>
+        </a>
+        <a class="card category-card" href="/categories/cue-cases">
+          <div class="placeholder placeholder-case" aria-hidden="true"></div>
+          <h3>Cue Cases</h3>
+        </a>
+        <a class="card category-card" href="/categories/pool-balls">
+          <div class="placeholder placeholder-ball" aria-hidden="true"></div>
+          <h3>Pool Balls</h3>
+        </a>
+        <a class="card category-card" href="/categories/accessories">
+          <div class="placeholder placeholder-acc" aria-hidden="true"></div>
+          <h3>Accessories</h3>
+        </a>
+      </div>
+    </div>
+  </section>
+
+  <!-- FEATURED PRODUCTS: four sample products -->
+  <section class="section section-alt" aria-labelledby="products-title">
+    <div class="container">
+      <h2 id="products-title" class="section-title">Featured Products</h2>
+      <div class="grid grid-4">
+        <article class="card product-card">
+          <div class="placeholder placeholder-cue" aria-hidden="true"></div>
+          <h3>Pro Series Maple Cue</h3>
+          <p class="price">&pound;89.99</p>
+          <button type="button" class="btn btn-green">Add to Cart</button>
+        </article>
+        <article class="card product-card">
+          <div class="placeholder placeholder-case" aria-hidden="true"></div>
+          <h3>Hard Shell Cue Case</h3>
+          <p class="price">&pound;49.99</p>
+          <button type="button" class="btn btn-green">Add to Cart</button>
+        </article>
+        <article class="card product-card">
+          <div class="placeholder placeholder-ball" aria-hidden="true"></div>
+          <h3>Tournament Ball Set</h3>
+          <p class="price">&pound;64.99</p>
+          <button type="button" class="btn btn-green">Add to Cart</button>
+        </article>
+        <article class="card product-card">
+          <div class="placeholder placeholder-acc" aria-hidden="true"></div>
+          <h3>Chalk &amp; Tip Kit</h3>
+          <p class="price">&pound;14.99</p>
+          <button type="button" class="btn btn-green">Add to Cart</button>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL-TO-ACTION BANNER -->
+  <section class="cta" aria-labelledby="cta-title">
+    <div class="container cta-inner">
+      <h2 id="cta-title">Upgrade Your Game Today</h2>
+      <p>Free delivery on orders over &pound;50.</p>
+      <a class="btn btn-gold" href="/shop">Browse the Shop</a>
+    </div>
+  </section>
+
+  <!-- ABOUT US -->
+  <section class="section" aria-labelledby="about-title">
+    <div class="container about">
+      <h2 id="about-title" class="section-title">About Us</h2>
+      <p>
+        Cue Corner is a specialist pool and snooker equipment store run by players, for players.
+        From first cues for beginners to tournament-grade gear for serious competitors, we stock
+        quality products and offer friendly, expert advice to help you play your best.
+      </p>
+    </div>
+  </section>
+
+{% endblock %}

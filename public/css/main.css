@@ -1,0 +1,409 @@
+/* ===== Design tokens: colour scheme and shared values ===== */
+:root {
+    --green-900: #072a1f;
+    --green-700: #0f5132;
+    --green-500: #1b7a55;
+    --black: #000000;
+    --gold: #d4af37;
+    --gold-dark: #b8932a;
+    --white: #ffffff;
+    --grey-100: #f4f6f5;
+    --grey-600: #555f5a;
+    --radius: 10px;
+    --shadow: 0 4px 14px rgba(0, 0, 0, 0.12);
+}
+
+/* ===== Reset and base ===== */
+*,
+*::before,
+*::after {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    font-family: system-ui, -apple-system, "Segoe UI", Roboto, Arial, sans-serif;
+    line-height: 1.6;
+    color: var(--black);
+    background: var(--white);
+}
+
+img {
+    max-width: 100%;
+    display: block;
+}
+
+a {
+    color: inherit;
+}
+
+ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+}
+
+/* Centred content wrapper */
+.container {
+    width: min(1200px, 100% - 2rem);
+    margin-inline: auto;
+}
+
+/* ===== Accessibility helpers ===== */
+.visually-hidden {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+}
+
+.skip-link {
+    position: absolute;
+    left: 0.5rem;
+    top: -4rem;
+    background: var(--gold);
+    color: var(--black);
+    padding: 0.5rem 1rem;
+    border-radius: var(--radius);
+    z-index: 100;
+}
+
+.skip-link:focus {
+    top: 0.5rem;
+}
+
+:focus-visible {
+    outline: 3px solid var(--gold);
+    outline-offset: 2px;
+}
+
+/* ===== Buttons ===== */
+.btn {
+    display: inline-block;
+    padding: 0.65rem 1.4rem;
+    border: 2px solid transparent;
+    border-radius: var(--radius);
+    font: inherit;
+    font-weight: 600;
+    text-decoration: none;
+    cursor: pointer;
+    transition: transform 0.15s ease, background-color 0.15s ease, color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.btn:hover {
+    transform: translateY(-2px);
+    box-shadow: var(--shadow);
+}
+
+.btn-gold {
+    background: var(--gold);
+    color: var(--black);
+}
+
+.btn-gold:hover {
+    background: var(--gold-dark);
+}
+
+.btn-green {
+    background: var(--green-700);
+    color: var(--white);
+}
+
+.btn-green:hover {
+    background: var(--green-500);
+}
+
+.btn-small {
+    padding: 0.45rem 1rem;
+}
+
+.btn-large {
+    padding: 0.9rem 2.2rem;
+    font-size: 1.15rem;
+}
+
+/* ===== Header: sticky, two levels ===== */
+.site-header {
+    position: sticky;
+    top: 0;
+    z-index: 50;
+    color: var(--white);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.35);
+}
+
+/* Level 1: logo, search, actions */
+.header-top {
+    background: var(--black);
+    border-bottom: 2px solid var(--gold);
+}
+
+.header-top-inner {
+    display: flex;
+    align-items: center;
+    gap: 1rem 2rem;
+    padding-block: 1rem;
+}
+
+/* Logo placeholder */
+.logo {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.6rem;
+    text-decoration: none;
+    font-size: 1.4rem;
+    font-weight: 700;
+}
+
+.logo-mark {
+    display: grid;
+    place-items: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    border-radius: 50%;
+    background: var(--gold);
+    color: var(--black);
+    font-size: 1rem;
+    transition: transform 0.2s ease;
+}
+
+.logo-text {
+    color: var(--gold);
+    transition: color 0.2s ease;
+}
+
+.logo:hover .logo-mark {
+    transform: scale(1.1);
+}
+
+.logo:hover .logo-text {
+    color: var(--white);
+}
+
+/* Search bar: fills the space between the logo and the actions */
+.search {
+    display: flex;
+    flex: 1 1 auto;
+    align-items: stretch;
+    height: 2.75rem;
+    overflow: hidden;
+    background: var(--white);
+    border: 2px solid var(--gold);
+    border-radius: 999px;
+    transition: box-shadow 0.2s ease;
+}
+
+.search:hover,
+.search:focus-within {
+    box-shadow: 0 0 0 4px rgba(212, 175, 55, 0.3);
+}
+
+.search input {
+    flex: 1;
+    min-width: 0;
+    padding: 0 1.2rem;
+    border: 0;
+    background: transparent;
+    color: var(--black);
+    font: inherit;
+}
+
+.search input:focus-visible {
+    outline: none;
+}
+
+.search-btn {
+    display: grid;
+    place-items: center;
+    padding: 0 1.2rem;
+    border: 0;
+    background: var(--gold);
+    color: var(--black);
+    cursor: pointer;
+    transition: background-color 0.15s ease;
+}
+
+.search-btn:hover {
+    background: var(--gold-dark);
+}
+
+/* Cart and Login, far right */
+.header-actions {
+    display: flex;
+    flex: 0 0 auto;
+    align-items: center;
+    gap: 0.75rem;
+}
+
+.header-btn {
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-height: 2.75rem;
+    padding: 0 1.25rem;
+    border: 2px solid var(--gold);
+    border-radius: 999px;
+    color: var(--gold);
+    font-weight: 600;
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+}
+
+.header-btn:hover {
+    background: var(--gold);
+    color: var(--black);
+    transform: translateY(-2px);
+}
+
+/* Cart is icon-only; the badge is attached to its top-right corner */
+.cart-link {
+    width: 2.75rem;
+    padding: 0;
+}
+
+.cart-count {
+    position: absolute;
+    top: -0.45rem;
+    right: -0.45rem;
+    display: grid;
+    place-items: center;
+    min-width: 1.4rem;
+    height: 1.4rem;
+    padding: 0 0.3rem;
+    border: 2px solid var(--black);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--black);
+    font-size: 0.75rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Level 2: compact navigation bar (Home, Shop, Categories only) */
+.main-nav {
+    background: var(--green-700);
+}
+
+.main-nav ul {
+    display: flex;
+    justify-content: flex-start;
+    gap: 0.25rem;
+}
+
+.main-nav a {
+    display: block;
+    padding: 0.4rem 1rem;
+    border-bottom: 2px solid transparent;
+    font-size: 0.9rem;
+    font-weight: 600;
+    letter-spacing: 0.03em;
+    text-decoration: none;
+    transition: background-color 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.main-nav a:hover {
+    background: rgba(255, 255, 255, 0.1);
+    color: var(--gold);
+    border-bottom-color: var(--gold);
+}
+
+/* ===== Footer ===== */
+.site-footer {
+    background: var(--green-900);
+    color: var(--white);
+    border-top: 3px solid var(--gold);
+    padding-block: 2rem;
+}
+
+.footer-inner {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 1rem;
+    text-align: center;
+}
+
+.footer-brand {
+    margin: 0;
+    color: var(--gold);
+    font-size: 1.3rem;
+    font-weight: 700;
+}
+
+.site-footer ul {
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 0.5rem 1.5rem;
+}
+
+.site-footer a {
+    text-decoration: none;
+}
+
+.site-footer a:hover {
+    color: var(--gold);
+    text-decoration: underline;
+}
+
+.copyright {
+    margin: 0;
+    font-size: 0.85rem;
+    opacity: 0.8;
+}
+
+/* ===== Tablet ===== */
+@media (max-width: 900px) {
+    .header-top-inner {
+        gap: 1rem;
+    }
+
+    .search {
+        max-width: none;
+    }
+}
+
+/* ===== Mobile: logo and actions on row 1, search on row 2 ===== */
+@media (max-width: 640px) {
+    .header-top-inner {
+        flex-wrap: wrap;
+        padding-block: 0.75rem;
+    }
+
+    .logo {
+        order: 1;
+        font-size: 1.2rem;
+    }
+
+    .header-actions {
+        order: 2;
+        margin-left: auto;
+        gap: 0.5rem;
+    }
+
+    .search {
+        order: 3;
+        flex-basis: 100%;
+        margin-inline: 0;
+    }
+
+    .header-btn:not(.cart-link) {
+        padding: 0 1rem;
+    }
+
+    .main-nav ul {
+        gap: 0;
+    }
+
+    .main-nav li {
+        flex: 1;
+    }
+
+    .main-nav a {
+        padding: 0.45rem 0.5rem;
+        text-align: center;
+    }
+}
