@@ -9,11 +9,13 @@ export function createApp(): Express {
   nunjucks.configure('views', {
     autoescape: true,
     express: app,
+    // tsx watch only restarts on .ts changes, so templates must not be cached in dev.
+    noCache: process.env.NODE_ENV !== 'production',
   });
   app.set('view engine', 'njk');
 
   app.get('/', (_req: Request, res: Response) => {
-    res.render('home-page', { title: 'Home Page' });
+    res.render('home-page', { title: 'Cue Corner | Pool & Snooker Equipment' });
   });
 
   app.get('/health', (_req: Request, res: Response) => {
