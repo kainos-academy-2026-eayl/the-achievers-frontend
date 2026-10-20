@@ -18,6 +18,14 @@ export function createApp(): Express {
     res.render('home-page', { title: 'Cue Corner | Pool & Snooker Equipment' });
   });
 
+  app.get('/login', (_req: Request, res: Response) => {
+    res.render('login', { title: 'Login | Cue Corner' });
+  });
+
+  app.get('/registration', (_req: Request, res: Response) => {
+    res.render('registration', { title: 'Register | Cue Corner' });
+  });
+
   app.get('/health', (_req: Request, res: Response) => {
     res.json({ status: 'ok', uptime: process.uptime() });
   });
