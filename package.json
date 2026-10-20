@@ -8,7 +8,9 @@
     "dev": "tsx watch src/index.ts",
     "build": "npm run typecheck && esbuild src/index.ts --bundle --platform=node --format=esm --target=node22 --packages=external --outfile=dist/index.js --sourcemap",
     "typecheck": "tsc",
-    "start": "node dist/index.js"
+    "start": "node dist/index.js",
+    "lint": "...",
+    "test": "..."
   },
   "keywords": [],
   "author": "",
