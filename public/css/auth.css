@@ -1,0 +1,88 @@
+.auth-page {
+    display: grid;
+    place-items: center;
+    min-height: 65vh;
+    padding: clamp(2rem, 6vw, 4rem) 1rem;
+    background: var(--grey-100);
+}
+
+.auth-card {
+    width: 100%;
+    max-width: 460px;
+    min-width: 0;
+    padding: clamp(1.25rem, 4vw, 2.5rem);
+    border: 1px solid var(--gold);
+    border-top: 5px solid var(--green-700);
+    border-radius: var(--radius);
+    background: var(--white);
+    box-shadow: var(--shadow);
+}
+
+.auth-card h1 {
+    margin: 0 0 0.5rem;
+    color: var(--green-900);
+    font-size: 2rem;
+    line-height: 1.2;
+}
+
+.auth-notice {
+    margin: 0 0 1.75rem;
+    color: var(--grey-600);
+    font-size: 0.9rem;
+}
+
+.auth-form {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.auth-field {
+    display: grid;
+    gap: 0.4rem;
+    min-width: 0;
+}
+
+.auth-field label {
+    color: var(--green-900);
+    font-weight: 600;
+}
+
+.auth-field input {
+    width: 100%;
+    min-width: 0;
+    min-height: 48px;
+    padding: 0.75rem 1rem;
+    border: 1px solid var(--grey-600);
+    border-radius: var(--radius);
+    background: var(--white);
+    color: var(--black);
+    font: inherit;
+}
+
+.auth-field input:focus {
+    border-color: var(--green-700);
+}
+
+.auth-form .btn {
+    width: 100%;
+    min-height: 48px;
+    margin-top: 0.25rem;
+}
+
+.auth-switch {
+    margin: 1.75rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--gold);
+    color: var(--grey-600);
+    text-align: center;
+}
+
+.auth-switch a {
+    color: var(--green-700);
+    font-weight: 600;
+    text-underline-offset: 3px;
+}
+
+.auth-switch a:hover {
+    color: var(--green-900);
+}
