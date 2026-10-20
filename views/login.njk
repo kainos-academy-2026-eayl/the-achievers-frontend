@@ -1,0 +1,30 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/auth.css">
+{% endblock %}
+
+{% block content %}
+  <section class="auth-page" aria-labelledby="login-title">
+  <div class="auth-card">
+    <h1 id="login-title">Login</h1>
+    <p class="auth-notice" id="login-notice">Demo only. This form does not sign you in or send your details.</p>
+
+    <form class="auth-form" aria-describedby="login-notice" onsubmit="event.preventDefault()">
+      <div class="auth-field">
+        <label for="login-email">Email</label>
+        <input id="login-email" name="email" type="email" autocomplete="username" required>
+      </div>
+
+      <div class="auth-field">
+        <label for="login-password">Password</label>
+        <input id="login-password" name="password" type="password" autocomplete="current-password" required>
+      </div>
+
+      <button class="btn btn-green" type="submit">Login</button>
+    </form>
+
+    <p class="auth-switch">Don't have an account? <a href="/registration">Register</a></p>
+  </div>
+  </section>
+{% endblock %}
