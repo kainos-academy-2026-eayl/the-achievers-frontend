@@ -146,40 +146,26 @@ ul {
     padding-block: 1rem;
 }
 
-/* Logo placeholder */
+/* Logo */
 .logo {
     display: flex;
     flex: 0 0 auto;
     align-items: center;
-    gap: 0.6rem;
     text-decoration: none;
-    font-size: 1.4rem;
-    font-weight: 700;
 }
 
-.logo-mark {
-    display: grid;
-    place-items: center;
-    width: 2.5rem;
-    height: 2.5rem;
-    border-radius: 50%;
-    background: var(--gold);
-    color: var(--black);
-    font-size: 1rem;
+/* Crop the PNG's empty margins; the 45% offset centres the artwork on the search bar */
+.logo-img {
+    display: block;
+    width: 20rem;
+    height: 4.5rem;
+    object-fit: cover;
+    object-position: 50% 45%;
     transition: transform 0.2s ease;
 }
 
-.logo-text {
-    color: var(--gold);
-    transition: color 0.2s ease;
-}
-
-.logo:hover .logo-mark {
-    transform: scale(1.1);
-}
-
-.logo:hover .logo-text {
-    color: var(--white);
+.logo:hover .logo-img {
+    transform: scale(1.04);
 }
 
 /* Search bar: fills the space between the logo and the actions */
@@ -375,7 +361,11 @@ ul {
 
     .logo {
         order: 1;
-        font-size: 1.2rem;
+    }
+
+    .logo-img {
+        width: 12rem;
+        height: 2.75rem;
     }
 
     .header-actions {
