@@ -1,0 +1,109 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/shop.css">
+{% endblock %}
+
+{% block content %}
+
+  <!-- RESULTS BAR: result count and active search/filter -->
+  <div class="results-bar">
+    <div class="container">
+      <p class="results-summary">
+        {% if products | length %}
+          {{ products | length }} result{% if products | length != 1 %}s{% endif %}
+        {% else %}
+          No results
+        {% endif %}
+        {% if filters.q %} for <strong class="results-term">"{{ filters.q }}"</strong>{% endif %}
+        {% if filters.category %} in <strong class="results-term">{{ filters.category }}</strong>{% endif %}
+      </p>
+    </div>
+  </div>
+
+  <div class="container shop-layout">
+
+    <!-- SIDEBAR: category filters -->
+    <aside class="shop-sidebar" aria-labelledby="filter-title">
+      <h2 id="filter-title" class="sidebar-title">Department</h2>
+      <ul class="filter-list">
+        <li>
+          <a href="/shop{% if filters.q %}?q={{ filters.q | urlencode }}{% endif %}"
+             {% if not filters.category %}class="active" aria-current="page"{% endif %}>All products</a>
+        </li>
+        {% for cat in categories %}
+          <li>
+            <a href="/shop?category={{ cat.name | urlencode }}{% if filters.q %}&amp;q={{ filters.q | urlencode }}{% endif %}"
+               {% if filters.category == cat.name %}class="active" aria-current="page"{% endif %}>
+              {{ cat.name }} <span class="filter-count">({{ cat.count }})</span>
+            </a>
+          </li>
+        {% endfor %}
+      </ul>
+
+      <h2 class="sidebar-title">Delivery</h2>
+      <p class="sidebar-note">FREE UK delivery on orders over &pound;50</p>
+    </aside>
+
+    <!-- RESULTS -->
+    <section class="shop-results" aria-labelledby="results-title">
+      <h1 id="results-title" class="results-title">
+        {% if filters.category %}{{ filters.category }}{% else %}Results{% endif %}
+      </h1>
+      <p class="results-hint">Check each product page for other buying options.</p>
+
+      {% if totalAvailable == 0 %}
+        <div class="empty-state" role="status">
+          <h2>No products available</h2>
+          <p>Our catalogue is currently empty. Please check back soon.</p>
+        </div>
+      {% elif products | length == 0 %}
+        <div class="empty-state" role="status">
+          <h2>No matching products</h2>
+          <p>Try checking your spelling or using a different search term.</p>
+          <a class="btn-basket" href="/shop">View all products</a>
+        </div>
+      {% else %}
+        <ul class="product-grid">
+          {% for product in products %}
+            <li>
+              <article class="product-tile" aria-labelledby="product-{{ product.id }}">
+                <div class="product-image product-image-{{ product.imageVariant }}" aria-hidden="true"></div>
+
+                <div class="product-body">
+                  <h2 id="product-{{ product.id }}" class="product-name">{{ product.name }}</h2>
+                  <p class="product-category">{{ product.category }}</p>
+
+                  {% if product.rating !== null %}
+                    <p class="product-rating">
+                      <span class="stars" aria-hidden="true"><span class="stars-fill" style="width: {{ product.ratingPercent }}%"></span></span>
+                      <span class="visually-hidden">{{ product.rating }} out of 5 stars,</span>
+                      <span class="review-count">{{ product.reviewCount }}<span class="visually-hidden"> ratings</span></span>
+                    </p>
+                  {% endif %}
+
+                  <p class="product-description">{{ product.description }}</p>
+
+                  {% if product.price %}
+                    <p class="product-price">
+                      <span class="visually-hidden">{{ product.price.formatted }}</span>
+                      <span aria-hidden="true">
+                        <span class="price-symbol">{{ product.price.currencySymbol }}</span><span class="price-whole">{{ product.price.whole }}</span><span class="price-fraction">{{ product.price.fraction }}</span>
+                      </span>
+                    </p>
+                    <p class="product-delivery">FREE delivery on orders over &pound;50</p>
+                    <button type="button" class="btn-basket">Add to basket</button>
+                  {% else %}
+                    <p class="product-unavailable">Currently unavailable.</p>
+                    <button type="button" class="btn-basket" disabled>Unavailable</button>
+                  {% endif %}
+                </div>
+              </article>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </section>
+  </div>
+
+{% endblock %}

@@ -1,7 +1,17 @@
 import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
+import { getProducts } from "./data/products";
+import { buildCatalogue } from "./services/product-service";
 
-export function createApp(): Express {
+const MAX_QUERY_LENGTH = 100;
+
+function queryString(value: unknown): string {
+	return typeof value === "string"
+		? value.trim().slice(0, MAX_QUERY_LENGTH)
+		: "";
+}
+
+export function createApp(loadProducts: () => unknown = getProducts): Express {
 	const app = express();
 
 	app.use(express.static("public"));
@@ -16,6 +26,15 @@ export function createApp(): Express {
 
 	app.get("/", (_req: Request, res: Response) => {
 		res.render("home-page", { title: "Cue Corner | Pool & Snooker Equipment" });
+	});
+
+	app.get("/shop", (req: Request, res: Response) => {
+		const filters = {
+			q: queryString(req.query.q),
+			category: queryString(req.query.category),
+		};
+		const catalogue = buildCatalogue(loadProducts(), filters);
+		res.render("shop", { title: "Shop | Cue Corner", filters, ...catalogue });
 	});
 
 	app.get("/login", (_req: Request, res: Response) => {
