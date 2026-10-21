@@ -1,0 +1,119 @@
+/* ===== Results bar ===== */
+.results-bar {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    justify-content: space-between;
+    gap: 0.5rem;
+    margin-bottom: 1.5rem;
+    padding-bottom: 0.75rem;
+    border-bottom: 1px solid #dfe5e2;
+}
+
+.results-title {
+    margin: 0;
+    font-size: clamp(1.4rem, 3vw, 1.8rem);
+}
+
+.results-count {
+    margin: 0;
+    color: var(--grey-600);
+}
+
+/* ===== Product grid ===== */
+.catalogue-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(230px, 1fr));
+    gap: 1.25rem;
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.catalogue-card {
+    height: 100%;
+    gap: 0.5rem;
+}
+
+.catalogue-card .btn {
+    margin-top: auto;
+}
+
+.product-category {
+    margin: 0;
+    font-size: 0.8rem;
+    font-weight: 600;
+    letter-spacing: 0.04em;
+    text-transform: uppercase;
+    color: var(--green-500);
+}
+
+.product-name {
+    margin: 0;
+    font-size: 1.05rem;
+    line-height: 1.3;
+    color: var(--black);
+}
+
+.product-description {
+    display: -webkit-box;
+    margin: 0;
+    overflow: hidden;
+    font-size: 0.9rem;
+    color: var(--grey-600);
+    -webkit-line-clamp: 3;
+    line-clamp: 3;
+    -webkit-box-orient: vertical;
+}
+
+/* ===== Star rating ===== */
+.product-rating {
+    display: flex;
+    align-items: center;
+    gap: 0.4rem;
+    font-size: 0.9rem;
+}
+
+.stars {
+    position: relative;
+    display: inline-block;
+    line-height: 1;
+    color: #d5d9d9;
+}
+
+.stars::before {
+    content: "\2605\2605\2605\2605\2605";
+}
+
+.stars-fill {
+    position: absolute;
+    inset: 0 auto 0 0;
+    overflow: hidden;
+    white-space: nowrap;
+    color: var(--gold);
+}
+
+.stars-fill::before {
+    content: "\2605\2605\2605\2605\2605";
+}
+
+.review-count {
+    color: var(--grey-600);
+}
+
+/* ===== Empty / error message ===== */
+.catalogue-message {
+    padding: 3rem 1rem;
+    text-align: center;
+    background: var(--grey-100);
+    border-radius: var(--radius);
+}
+
+.catalogue-message h2 {
+    margin: 0 0 0.5rem;
+}
+
+.catalogue-message p {
+    margin: 0;
+    color: var(--grey-600);
+}
