@@ -22,6 +22,10 @@ export function createApp(): Express {
 		res.render("login", { title: "Login | Cue Corner" });
 	});
 
+	app.get("/reset-pass", (_req: Request, res: Response) => {
+		res.render("reset-pass", { title: "Reset Password | Cue Corner" });
+	});
+
 	app.get("/registration", (_req: Request, res: Response) => {
 		res.render("registration", { title: "Register | Cue Corner" });
 	});
