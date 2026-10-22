@@ -34,8 +34,9 @@ afterEach(() => {
 	vi.unstubAllEnvs();
 });
 
-describe("Login with the real backend on port 3000", () => {
-	const backendUrl = "http://localhost:3000";
+const backendUrl = process.env.AUTH_INTEGRATION_BACKEND_URL;
+
+describe.skipIf(!backendUrl)("Login with the real backend", () => {
 	const realCredentials = {
 		email: `login-test-${randomUUID()}@example.com`,
 		password: " LongEnoughPassword123! ",

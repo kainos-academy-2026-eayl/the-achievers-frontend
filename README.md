@@ -94,12 +94,17 @@ Before pushing, run `npm run typecheck` and `npm run build`.
 
 ### Registration tests
 
-Run `npm test -- tests/app.test.ts` with the real backend running at
-`http://localhost:3000` and connected to a development/test database. The
-registration tests explicitly use this URL instead of any configured backend URL.
-The frontend itself does not need to be running.
+Run `npm test -- tests/app.test.ts` for isolated registration tests; no backend
+is required. To also run the real-backend test, start a backend connected to a
+development/test database and opt in explicitly:
 
-The success test makes a real registration request and checks the backend's
+```bash
+AUTH_INTEGRATION_BACKEND_URL=http://localhost:3000 npm test -- tests/app.test.ts
+```
+
+The frontend itself does not need to be running. The integration test is skipped
+when `AUTH_INTEGRATION_BACKEND_URL` is unset.
+The integration test makes a real registration request and checks the backend's
 `201` response and returned user details. Each run creates a user with a unique
 `registration-test-<UUID>@example.com` email in the backend database. These users
 are not automatically deleted; do not run against a production database.
@@ -108,9 +113,16 @@ Local input-validation tests still check that invalid forms do not call the back
 
 ### Login tests
 
-Run `npm test -- tests/login.test.ts` with the real backend running at
-`http://localhost:3000` and connected to a development/test database. The
-real-backend tests create a unique `login-test-<UUID>@example.com` account,
+Run `npm test -- tests/login.test.ts` for isolated login tests; no backend is
+required. To also run the real-backend tests, start a backend connected to a
+development/test database and opt in explicitly:
+
+```bash
+AUTH_INTEGRATION_BACKEND_URL=http://localhost:3000 npm test -- tests/login.test.ts
+```
+
+The real-backend tests are skipped when `AUTH_INTEGRATION_BACKEND_URL` is unset.
+They create a unique `login-test-<UUID>@example.com` account,
 then verify successful login, session persistence, logout, and rejection of
 an incorrect password. The test account is not automatically deleted.
 Do not run against a production database. The frontend does not need to be running.

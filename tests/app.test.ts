@@ -3,6 +3,8 @@ import request from 'supertest';
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
 
+const backendUrl = process.env.AUTH_INTEGRATION_BACKEND_URL;
+
 describe('POST /registration', () => {
     beforeEach(() => {
         vi.stubEnv('API_BASE_URL', 'http://localhost:3000');
@@ -13,7 +15,40 @@ describe('POST /registration', () => {
         vi.unstubAllEnvs();
     });
 
-    it('creates a user through the real backend on port 3000', async () => {
+    it('forwards registration details and renders confirmation', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(JSON.stringify({ name: 'Cue User', email: 'cue-user@example.com' }), {
+                status: 201,
+                headers: { 'Content-Type': 'application/json' },
+            }),
+        );
+
+        const response = await request(createApp())
+            .post('/registration')
+            .type('form')
+            .send({
+                name: 'Cue User',
+                email: 'cue-user@example.com',
+                password: 'secure-password',
+                confirmPassword: 'secure-password',
+            });
+
+        expect(fetchSpy).toHaveBeenCalledExactlyOnceWith('http://localhost:3000/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: 'Cue User',
+                email: 'cue-user@example.com',
+                password: 'secure-password',
+            }),
+        });
+        expect(response.status).toBe(202);
+        expect(response.text).toContain('Your registration details were received.');
+        expect(response.text).not.toContain('secure-password');
+    });
+
+    it.skipIf(!backendUrl)('creates a user through the real backend', async () => {
+        vi.stubEnv('API_BASE_URL', backendUrl!);
         const fetchSpy = vi.spyOn(globalThis, 'fetch');
         const app = createApp();
         const email = `registration-test-${randomUUID()}@example.com`;
@@ -29,7 +64,7 @@ describe('POST /registration', () => {
             })
             .timeout({ response: 10_000, deadline: 12_000 });
 
-        expect(fetchSpy).toHaveBeenCalledWith('http://localhost:3000/api/register', {
+        expect(fetchSpy).toHaveBeenCalledWith(`${backendUrl}/api/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: 'Cue User', email, password: 'secure-password' }),
