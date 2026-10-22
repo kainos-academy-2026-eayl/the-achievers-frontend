@@ -43,6 +43,8 @@ curl http://localhost:3000/health
 # {"status":"ok","uptime":1.234}
 ```
 
+The frontend listens on `http://localhost:3000` by default. Registration requests are forwarded to the backend at `http://localhost:3001` by default; set `BACKEND_URL` in `.env` to the backend's base URL if it uses a different address.
+
 Use `npm ci` rather than `npm install`. It installs the exact versions recorded in `package-lock.json`, so everyone on the team runs identical dependencies. Use `npm install` only when you are deliberately adding or upgrading a package.
 
 ## Making it your own
@@ -138,6 +140,7 @@ Environment variables are loaded from `.env` by [dotenv](https://github.com/motd
 | Variable | Required | Description |
 | --- | --- | --- |
 | `PORT` | yes | Port the service listens on. The service exits at startup if it is missing or invalid. |
+| `BACKEND_URL` | no | Backend base URL used for registration requests. Defaults to `http://localhost:3001`; the frontend listens on the separate `PORT` (3000 in `.env.example`). |
 
 The server binds to `0.0.0.0` so it is reachable from outside a container. Add new variables to both your `.env` and [.env.example](.env.example).
 

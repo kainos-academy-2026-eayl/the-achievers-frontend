@@ -8,17 +8,17 @@
   <section class="auth-page" aria-labelledby="registration-title">
   <div class="auth-card">
     <h1 id="registration-title">Register</h1>
-    <p class="auth-notice" id="registration-notice">Demo only. This form does not create an account or send your details.</p>
+    <p class="auth-notice" id="registration-notice" role="{{ 'alert' if registrationError else 'status' }}">{{ registrationMessage | default("Your details will be sent to the registration service.") }}</p>
 
-    <form class="auth-form" aria-describedby="registration-notice" onsubmit="event.preventDefault()">
+    <form class="auth-form" action="/registration" method="post" aria-describedby="registration-notice">
       <div class="auth-field">
         <label for="registration-name">Name</label>
-        <input id="registration-name" name="name" type="text" autocomplete="name" required>
+        <input id="registration-name" name="name" type="text" autocomplete="name" value="{{ name | default('') }}" required>
       </div>
 
       <div class="auth-field">
         <label for="registration-email">Email</label>
-        <input id="registration-email" name="email" type="email" autocomplete="email" required>
+        <input id="registration-email" name="email" type="email" autocomplete="email" value="{{ email | default('') }}" required>
       </div>
 
       <div class="auth-field">
