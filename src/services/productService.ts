@@ -1,15 +1,5 @@
 import type { ProductClient } from "../clients/productClient";
-
-export interface ProductViewModel {
-    id: string;
-    name: string;
-    description: string;
-    category: string;
-    price: string;
-    rating: number | null;
-    ratingPercent: number;
-    reviewCount: number;
-}
+import type { ProductViewModel } from "../models/productViewModel";
 
 const priceFormatter = new Intl.NumberFormat("en-GB", {
     style: "currency",
