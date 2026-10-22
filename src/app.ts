@@ -34,7 +34,7 @@ export function createApp(): Express {
 
 		if (
 			!trimmedName ||
-			!trimmedEmail?.includes("@") ||
+			!/^[^\s@]+@[^\s@]+$/.test(trimmedEmail) ||
 			typeof password !== "string" ||
 			!password
 		) {
