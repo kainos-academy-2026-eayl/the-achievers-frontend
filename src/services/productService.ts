@@ -1,77 +1,77 @@
 import type { ProductClient } from "../clients/productClient";
 
 export interface ProductViewModel {
-    id: string;
-    name: string;
-    description: string;
-    category: string;
-    price: string;
-    rating: number | null;
-    ratingPercent: number;
-    reviewCount: number;
+	id: string;
+	name: string;
+	description: string;
+	category: string;
+	price: string;
+	rating: number | null;
+	ratingPercent: number;
+	reviewCount: number;
 }
 
 const priceFormatter = new Intl.NumberFormat("en-GB", {
-    style: "currency",
-    currency: "GBP",
+	style: "currency",
+	currency: "GBP",
 });
 
 function isNonEmptyString(value: unknown): value is string {
-    return typeof value === "string" && value.trim() !== "";
+	return typeof value === "string" && value.trim() !== "";
 }
 
 export function toProductViewModel(raw: unknown): ProductViewModel | null {
-    if (typeof raw !== "object" || raw === null) {
-        return null;
-    }
+	if (typeof raw !== "object" || raw === null) {
+		return null;
+	}
 
-    const { id, name, description, category, price, rating, reviewCount } =
-        raw as Record<string, unknown>;
+	const { id, name, description, category, price, rating, reviewCount } =
+		raw as Record<string, unknown>;
 
-    if (
-        !isNonEmptyString(id) ||
-        !isNonEmptyString(name) ||
-        !isNonEmptyString(description) ||
-        !isNonEmptyString(category) ||
-        typeof price !== "number" ||
-        !Number.isFinite(price) ||
-        price < 0
-    ) {
-        return null;
-    }
+	if (
+		!isNonEmptyString(id) ||
+		!isNonEmptyString(name) ||
+		!isNonEmptyString(description) ||
+		!isNonEmptyString(category) ||
+		typeof price !== "number" ||
+		!Number.isFinite(price) ||
+		price < 0
+	) {
+		return null;
+	}
 
-    const validRating =
-        typeof rating === "number" && rating >= 0 && rating <= 5 ? rating : null;
+	const validRating =
+		typeof rating === "number" && rating >= 0 && rating <= 5 ? rating : null;
 
-    return {
-        id,
-        name: name.trim(),
-        description: description.trim(),
-        category: category.trim(),
-        price: priceFormatter.format(price),
-        rating: validRating,
-        ratingPercent: validRating === null ? 0 : (validRating / 5) * 100,
-        reviewCount:
-            typeof reviewCount === "number" &&
-                Number.isInteger(reviewCount) &&
-                reviewCount >= 0
-                ? reviewCount
-                : 0,
-    };
+	return {
+		id,
+		name: name.trim(),
+		description: description.trim(),
+		category: category.trim(),
+		price: priceFormatter.format(price),
+		rating: validRating,
+		ratingPercent: validRating === null ? 0 : (validRating / 5) * 100,
+		reviewCount:
+			typeof reviewCount === "number" &&
+			Number.isInteger(reviewCount) &&
+			reviewCount >= 0
+				? reviewCount
+				: 0,
+	};
 }
 
 export class ProductService {
-    constructor(private readonly productClient: Pick<ProductClient, "getAll">) { }
+	constructor(private readonly productClient: Pick<ProductClient, "getAll">) {}
 
-    async getAll(): Promise<ProductViewModel[]> {
-        const data = await this.productClient.getAll();
+	async getAll(): Promise<ProductViewModel[]> {
+		const data = await this.productClient.getAll();
 
-        if (!Array.isArray(data)) {
-            throw new Error("Unexpected products response format");
-        }
+		if (!Array.isArray(data)) {
+			throw new Error("Unexpected products response format");
+		}
 
-        return data
-            .map(toProductViewModel)
-            .filter((product): product is ProductViewModel => product !== null);
-    }
+		return data
+			.map(toProductViewModel)
+			.filter((product): product is ProductViewModel => product !== null);
+	}
 }
