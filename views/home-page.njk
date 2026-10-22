@@ -40,36 +40,31 @@
     </div>
   </section>
 
-  <!-- FEATURED PRODUCTS: four sample products -->
+  <!-- FEATURED PRODUCTS -->
   <section class="section section-alt" aria-labelledby="products-title">
     <div class="container">
       <h2 id="products-title" class="section-title">Featured Products</h2>
+      {% if loadError %}
+        <p role="alert">We can't show featured products right now. Please try again later.</p>
+      {% elif not products.length %}
+        <p>No products available. Please check back soon.</p>
+      {% else %}
+      {% set placeholders = cycler("cue", "case", "ball", "acc") %}
       <div class="grid grid-4">
+        {% for product in products %}
         <article class="card product-card">
-          <div class="placeholder placeholder-cue" aria-hidden="true"></div>
-          <h3>Pro Series Maple Cue</h3>
-          <p class="price">&pound;89.99</p>
-          <button type="button" class="btn btn-green">Add to Cart</button>
+          <div class="placeholder placeholder-{{ placeholders.next() }}" aria-hidden="true"></div>
+          <h3>{{ product.name }}</h3>
+          <p class="price">{{ product.price }}</p>
+          <form action="/cart/items/add" method="post">
+            <input type="hidden" name="productId" value="{{ product.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <button type="submit" class="btn btn-green" aria-label="Add {{ product.name }} to cart">Add to Cart</button>
+          </form>
         </article>
-        <article class="card product-card">
-          <div class="placeholder placeholder-case" aria-hidden="true"></div>
-          <h3>Hard Shell Cue Case</h3>
-          <p class="price">&pound;49.99</p>
-          <button type="button" class="btn btn-green">Add to Cart</button>
-        </article>
-        <article class="card product-card">
-          <div class="placeholder placeholder-ball" aria-hidden="true"></div>
-          <h3>Tournament Ball Set</h3>
-          <p class="price">&pound;64.99</p>
-          <button type="button" class="btn btn-green">Add to Cart</button>
-        </article>
-        <article class="card product-card">
-          <div class="placeholder placeholder-acc" aria-hidden="true"></div>
-          <h3>Chalk &amp; Tip Kit</h3>
-          <p class="price">&pound;14.99</p>
-          <button type="button" class="btn btn-green">Add to Cart</button>
-        </article>
+        {% endfor %}
       </div>
+      {% endif %}
     </div>
   </section>
 

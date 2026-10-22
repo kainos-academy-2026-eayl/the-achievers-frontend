@@ -29,7 +29,7 @@ describe('POST /registration', () => {
         expect(response.status).toBe(202);
         expect(response.text).toContain('Your registration details were received.');
         expect(response.text).not.toContain('secure-password');
-        expect(fetchSpy).toHaveBeenCalledWith('http://localhost:3001/api/register', {
+        expect(fetchSpy).toHaveBeenCalledWith('http://localhost:3000/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: 'Cue User', email, password: 'secure-password' }),
