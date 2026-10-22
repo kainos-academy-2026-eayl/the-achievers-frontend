@@ -1,0 +1,59 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/home-page.css">
+  <link rel="stylesheet" href="/css/shop.css">
+{% endblock %}
+
+{% block content %}
+  <section class="section" aria-labelledby="shop-title">
+    <div class="container">
+      <div class="results-bar">
+        <h1 id="shop-title" class="results-title">All Products</h1>
+        {% if products.length %}
+          <p class="results-count">{{ products.length }} result{% if products.length != 1 %}s{% endif %}</p>
+        {% endif %}
+      </div>
+
+      {% if loadError %}
+        <div class="catalogue-message" role="alert">
+          <h2>We can't show products right now</h2>
+          <p>Something went wrong while loading the catalogue. Please try again later.</p>
+        </div>
+      {% elif not products.length %}
+        <div class="catalogue-message" role="status">
+          <h2>No products available</h2>
+          <p>There are currently no products in the catalogue. Please check back soon.</p>
+        </div>
+      {% else %}
+        {% set placeholders = cycler("cue", "case", "ball", "acc") %}
+        <ul class="catalogue-grid" role="list">
+          {% for product in products %}
+            <li>
+              <article class="card catalogue-card" aria-labelledby="product-{{ product.id }}">
+                <div class="placeholder placeholder-{{ placeholders.next() }}" aria-hidden="true"></div>
+                <p class="product-category">{{ product.category }}</p>
+                <h2 id="product-{{ product.id }}" class="product-name">{{ product.name }}</h2>
+
+                <div class="product-rating">
+                  {% if product.rating is number %}
+                    <span class="stars" role="img" aria-label="Rated {{ product.rating }} out of 5">
+                      <span class="stars-fill" style="width: {{ product.ratingPercent }}%"></span>
+                    </span>
+                    <span class="review-count">({{ product.reviewCount }})</span>
+                  {% else %}
+                    <span class="review-count">No reviews yet</span>
+                  {% endif %}
+                </div>
+
+                <p class="product-description">{{ product.description }}</p>
+                <p class="price">{{ product.price }}</p>
+                <button type="button" class="btn btn-gold">Add to Cart</button>
+              </article>
+            </li>
+          {% endfor %}
+        </ul>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}
