@@ -43,7 +43,9 @@ curl http://localhost:8000/health
 # {"status":"ok","uptime":1.234}
 ```
 
-The frontend listens on `http://localhost:8000` with the example configuration. Product, registration and cart requests are forwarded to the backend at `http://localhost:3000` by default; set `BACKEND_URL` in `.env` to the backend's base URL if it uses a different address.
+The example configuration runs the frontend at `http://localhost:8000`. Registration and product requests use the backend at `http://localhost:3000` by default; set `BACKEND_URL` in `.env` to the backend's base URL if it uses a different address.
+
+Registration sends `name`, `email`, `password`, `safeWordHint`, and `safeWord` as JSON to `POST /api/register`. The backend must validate the hint and securely hash and store the safe word. The current backend registration DTO and service only handle name, email, and password, so backend support is still required for the safe-word feature to work end to end.
 
 Use `npm ci` rather than `npm install`. It installs the exact versions recorded in `package-lock.json`, so everyone on the team runs identical dependencies. Use `npm install` only when you are deliberately adding or upgrading a package.
 

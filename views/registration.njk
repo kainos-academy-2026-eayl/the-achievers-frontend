@@ -31,6 +31,23 @@
         <input id="registration-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required>
       </div>
 
+      <div class="auth-field">
+        <label for="safe-word-hint">Safe Word Hint</label>
+        <select id="safe-word-hint" name="safeWordHint" required>
+          <option value="" disabled {{ 'selected' if not safeWordHint }}>Choose a hint</option>
+          <option value="mothers-maiden-name" {{ 'selected' if safeWordHint == 'mothers-maiden-name' }}>What is your mother's maiden name?</option>
+          <option value="favourite-movie" {{ 'selected' if safeWordHint == 'favourite-movie' }}>What is your favourite movie?</option>
+          <option value="first-pet" {{ 'selected' if safeWordHint == 'first-pet' }}>What was your first pet's name?</option>
+          <option value="childhood-friend" {{ 'selected' if safeWordHint == 'childhood-friend' }}>What did you call your childhood bestfriend?</option>
+          <option value="holiday" {{ 'selected' if safeWordHint == 'holiday' }}>What is your dream holiday location?</option>
+        </select>
+      </div>
+
+      <div class="auth-field">
+        <label for="registration-safe-word">Safe Word</label>
+        <input id="registration-safe-word" name="safeWord" type="password" autocomplete="off" required>
+      </div>
+
       <button class="btn btn-green" type="submit">Register</button>
     </form>
 
