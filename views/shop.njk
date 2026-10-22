@@ -48,7 +48,11 @@
 
                 <p class="product-description">{{ product.description }}</p>
                 <p class="price">{{ product.price }}</p>
-                <button type="button" class="btn btn-gold">Add to Cart</button>
+                <form action="/cart/items/add" method="post">
+                  <input type="hidden" name="productId" value="{{ product.id }}">
+                  <input type="hidden" name="quantity" value="1">
+                  <button type="submit" class="btn btn-gold" aria-label="Add {{ product.name }} to cart">Add to Cart</button>
+                </form>
               </article>
             </li>
           {% endfor %}
