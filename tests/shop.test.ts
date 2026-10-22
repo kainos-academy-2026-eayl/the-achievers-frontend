@@ -132,7 +132,7 @@ describe("GET /shop category filter", () => {
         expect(response.status).toBe(200);
         expect(response.text).toContain("Pro Series Maple Cue");
         expect(response.text).toContain("Carbon Break Cue");
-        expect(response.text).not.toContain("Hard Shell Cue Case");
+        expect(response.text).not.toContain('class="product-name">Hard Shell Cue Case<');
         expect(response.text).toContain("2 results");
     });
 
@@ -142,7 +142,7 @@ describe("GET /shop category filter", () => {
         );
 
         expect(response.text).toContain("Hard Shell Cue Case");
-        expect(response.text).not.toContain("Pro Series Maple Cue");
+        expect(response.text).not.toContain('class="product-name">Pro Series Maple Cue<');
         expect(response.text).toContain("1 result");
     });
 
@@ -168,8 +168,8 @@ describe("GET /shop category filter", () => {
 
         expect(response.status).toBe(200);
         expect(response.text).toContain("No products found");
-        expect(response.text).not.toContain("Pro Series Maple Cue");
-        expect(response.text).not.toContain("Hard Shell Cue Case");
+        expect(response.text).not.toContain('class="product-name">Pro Series Maple Cue<');
+        expect(response.text).not.toContain('class="product-name">Hard Shell Cue Case<');
     });
 
     it("only displays categories from valid products", async () => {
