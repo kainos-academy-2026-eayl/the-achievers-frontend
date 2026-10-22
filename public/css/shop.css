@@ -151,18 +151,8 @@
     box-shadow: 0 6px 20px rgba(0, 0, 0, 0.08);
 }
 
-.product-image {
-    display: grid;
-    place-items: center;
-    aspect-ratio: 4 / 3;
-    background: #f3f4f3;
-}
-
-.product-image img {
-    width: 45%;
-    opacity: 0.35;
-    filter: grayscale(30%);
-    transition: transform 0.3s ease;
+.product-tile .product-image {
+    border-radius: 0;
 }
 
 .product-tile:hover .product-image img {
