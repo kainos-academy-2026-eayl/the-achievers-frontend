@@ -8,6 +8,7 @@ import {
 	readCartId,
 } from "./controllers/cartController";
 import { CartService } from "./services/cartService";
+import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
 	filterByCategory,
 	getCategories,
@@ -78,6 +79,7 @@ export function createApp(
 	app.get("/shop", async (req: Request, res: Response) => {
 		const title = "Shop | Cue Corner";
 		const rawCategory = req.query.category;
+		const rawQuery = req.query.q;
 
 		if (rawCategory !== undefined && typeof rawCategory !== "string") {
 			return res.status(400).render("shop", {
@@ -88,20 +90,35 @@ export function createApp(
 			});
 		}
 
+		if (rawQuery !== undefined && typeof rawQuery !== "string") {
+			return res.status(400).render("shop", {
+				title,
+				products: [],
+				categories: [],
+				invalidSearch: true,
+			});
+		}
+
 		const selectedCategory = rawCategory?.trim() || undefined;
+		const searchQuery =
+			rawQuery?.trim().slice(0, MAX_QUERY_LENGTH) || undefined;
 
 		try {
 			const allProducts = await productService.getAll();
 			const categories = getCategories(allProducts);
-			const products = selectedCategory
+			const inCategory = selectedCategory
 				? filterByCategory(allProducts, selectedCategory)
 				: allProducts;
+			const products = searchQuery
+				? searchProducts(inCategory, searchQuery)
+				: inCategory;
 
 			return res.render("shop", {
 				title,
 				products,
 				categories,
 				selectedCategory,
+				searchQuery,
 			});
 		} catch (error) {
 			console.error("Failed to load products", error);
