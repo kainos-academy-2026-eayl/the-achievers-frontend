@@ -1,11 +1,16 @@
 import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
+import { registerAuth } from "./auth";
 import { ProductClient } from "./clients/productClient";
 import { ProductService } from "./services/productService";
 
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
-		new ProductClient(process.env.BACKEND_URL ?? "http://localhost:3001"),
+		new ProductClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
 	),
 ): Express {
 	const app = express();
@@ -21,6 +26,13 @@ export function createApp(
 	});
 	app.set("view engine", "njk");
 
+	registerAuth(
+		app,
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+	);
+
 	app.get("/", (_req: Request, res: Response) => {
 		res.render("home-page", { title: "Cue Corner | Pool & Snooker Equipment" });
 	});
@@ -34,10 +46,6 @@ export function createApp(
 			console.error("Failed to load products", error);
 			res.status(502).render("shop", { title, products: [], loadError: true });
 		}
-	});
-
-	app.get("/login", (_req: Request, res: Response) => {
-		res.render("login", { title: "Login | Cue Corner" });
 	});
 
 	app.get("/reset-pass", (_req: Request, res: Response) => {
@@ -83,7 +91,7 @@ export function createApp(
 
 		try {
 			const backendResponse = await fetch(
-				`${process.env.BACKEND_URL ?? "http://localhost:3001"}/api/register`,
+				`${process.env.API_BASE_URL ?? process.env.BACKEND_URL ?? "http://localhost:3000"}/api/register`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },

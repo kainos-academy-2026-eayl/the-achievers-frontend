@@ -1,17 +1,20 @@
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
 
 describe('POST /registration', () => {
-    afterEach(() => {
-        vi.restoreAllMocks();
+    beforeEach(() => {
+        vi.stubEnv('API_BASE_URL', 'http://localhost:3000');
     });
 
-    it('forwards registration details and confirms receipt', async () => {
-        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-            new Response(null, { status: 201 }),
-        );
+    afterEach(() => {
+        vi.restoreAllMocks();
+        vi.unstubAllEnvs();
+    });
+
+    it('creates a user through the real backend on port 3000', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
         const app = createApp();
         const email = `registration-test-${randomUUID()}@example.com`;
 
@@ -26,14 +29,17 @@ describe('POST /registration', () => {
             })
             .timeout({ response: 10_000, deadline: 12_000 });
 
-        expect(response.status).toBe(202);
-        expect(response.text).toContain('Your registration details were received.');
-        expect(response.text).not.toContain('secure-password');
-        expect(fetchSpy).toHaveBeenCalledWith('http://localhost:3001/api/register', {
+        expect(fetchSpy).toHaveBeenCalledWith('http://localhost:3000/api/register', {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: 'Cue User', email, password: 'secure-password' }),
         });
+        const backendResponse = await fetchSpy.mock.results[0]!.value;
+        expect(backendResponse.status, 'The real backend must create the user').toBe(201);
+        expect(await backendResponse.json()).toMatchObject({ name: 'Cue User', email });
+        expect(response.status).toBe(202);
+        expect(response.text).toContain('Your registration details were received.');
+        expect(response.text).not.toContain('secure-password');
     }, 15_000);
 
     it('rejects incomplete registration details', async () => {
