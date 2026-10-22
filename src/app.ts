@@ -9,6 +9,8 @@ import {
 } from "./controllers/cartController";
 import { CartService } from "./services/cartService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
+
+const MAX_SUGGESTIONS = 6;
 import {
 	filterByCategory,
 	getCategories,
@@ -128,6 +130,34 @@ export function createApp(
 				categories: [],
 				loadError: true,
 			});
+		}
+	});
+
+	app.get("/api/search", async (req: Request, res: Response) => {
+		const rawQuery = req.query.q;
+
+		if (rawQuery !== undefined && typeof rawQuery !== "string") {
+			return res.status(400).json({ error: "Invalid search query" });
+		}
+
+		const query = rawQuery?.trim().slice(0, MAX_QUERY_LENGTH) ?? "";
+		if (!query) {
+			return res.json({ results: [] });
+		}
+
+		try {
+			const results = searchProducts(await productService.getAll(), query)
+				.slice(0, MAX_SUGGESTIONS)
+				.map(({ id, name, category, price }) => ({
+					id,
+					name,
+					category,
+					price,
+				}));
+			return res.json({ results });
+		} catch (error) {
+			console.error("Failed to search products", error);
+			return res.status(502).json({ error: "Search is unavailable" });
 		}
 	});
 

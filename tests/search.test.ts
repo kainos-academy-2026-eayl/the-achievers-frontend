@@ -142,3 +142,70 @@ describe("GET /shop?q=", () => {
         expect(response.text).not.toContain("<script>alert(1)");
     });
 });
+
+describe("GET /api/search", () => {
+    it("returns suggestions for partial, misspelled input", async () => {
+        const response = await request(appWithProducts(rawProducts)).get(
+            "/api/search?q=har%20shel",
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.body.results).toEqual([
+            {
+                id: "p3",
+                name: "Hard Shell Cue Case",
+                category: "Cases",
+                price: "£45.00",
+            },
+        ]);
+    });
+
+    it("returns no results for an empty query", async () => {
+        const response = await request(appWithProducts(rawProducts)).get(
+            "/api/search?q=",
+        );
+
+        expect(response.body).toEqual({ results: [] });
+    });
+
+    it("limits the number of suggestions", async () => {
+        const many = Array.from({ length: 20 }, (_, i) => ({
+            ...rawProducts[0],
+            id: `m${i}`,
+        }));
+        const response = await request(appWithProducts(many)).get(
+            "/api/search?q=maple",
+        );
+
+        expect(response.body.results).toHaveLength(6);
+    });
+
+    it("rejects a malformed query", async () => {
+        const response = await request(appWithProducts(rawProducts)).get(
+            "/api/search?q=a&q=b",
+        );
+
+        expect(response.status).toBe(400);
+    });
+
+    it("returns 502 when the backend fails", async () => {
+        const app = createApp({
+            getAll: async () => {
+                throw new Error("backend down");
+            },
+        });
+
+        const response = await request(app).get("/api/search?q=cue");
+
+        expect(response.status).toBe(502);
+    });
+});
+
+describe("live search bar", () => {
+    it("is wired up on the home page", async () => {
+        const response = await request(appWithProducts(rawProducts)).get("/");
+
+        expect(response.text).toContain('aria-controls="search-suggestions"');
+        expect(response.text).toContain('src="/js/search.js"');
+    });
+});

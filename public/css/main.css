@@ -170,11 +170,11 @@ ul {
 
 /* Search bar: fills the space between the logo and the actions */
 .search {
+    position: relative;
     display: flex;
     flex: 1 1 auto;
     align-items: stretch;
     height: 2.75rem;
-    overflow: hidden;
     background: var(--white);
     border: 2px solid var(--gold);
     border-radius: 999px;
@@ -208,11 +208,64 @@ ul {
     background: var(--gold);
     color: var(--black);
     cursor: pointer;
+    border-radius: 0 999px 999px 0;
     transition: background-color 0.15s ease;
 }
 
 .search-btn:hover {
     background: var(--gold-dark);
+}
+
+/* Live search suggestions */
+.search-suggestions {
+    position: absolute;
+    top: calc(100% + 0.4rem);
+    left: 0;
+    right: 0;
+    z-index: 60;
+    max-height: 22rem;
+    margin: 0;
+    padding: 0.35rem 0;
+    overflow-y: auto;
+    background: var(--white);
+    border: 1px solid #e6e8e7;
+    border-radius: 8px;
+    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.15);
+}
+
+.search-suggestions a {
+    display: flex;
+    flex-direction: column;
+    padding: 0.5rem 1rem;
+    color: var(--black);
+    text-decoration: none;
+}
+
+.search-suggestions a:hover,
+.search-suggestions [aria-selected="true"] a {
+    background: var(--grey-100);
+}
+
+.suggestion-name {
+    font-weight: 600;
+}
+
+.suggestion-meta {
+    font-size: 0.8rem;
+    color: var(--grey-600);
+}
+
+.suggestion-all {
+    border-top: 1px solid #e6e8e7;
+}
+
+.suggestion-all .suggestion-name {
+    color: var(--green-700);
+}
+
+.suggestion-empty {
+    padding: 0.5rem 1rem;
+    color: var(--grey-600);
 }
 
 /* Cart and Login, far right */
