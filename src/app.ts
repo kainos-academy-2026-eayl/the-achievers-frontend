@@ -1,11 +1,25 @@
 import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
+import { CartClient } from "./clients/cartClient";
 import { ProductClient } from "./clients/productClient";
-import { ProductService } from "./services/productService";
+import {
+	type CartOperations,
+	createCartRouter,
+	readCartId,
+} from "./controllers/cartController";
+import { CartService } from "./services/cartService";
+import {
+	filterByCategory,
+	getCategories,
+	ProductService,
+} from "./services/productService";
 
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(process.env.BACKEND_URL ?? "http://localhost:3000"),
+	),
+	cartService: CartOperations = new CartService(
+		new CartClient(process.env.BACKEND_URL ?? "http://localhost:3000"),
 	),
 ): Express {
 	const app = express();
@@ -21,18 +35,82 @@ export function createApp(
 	});
 	app.set("view engine", "njk");
 
-	app.get("/", (_req: Request, res: Response) => {
-		res.render("home-page", { title: "Cue Corner | Pool & Snooker Equipment" });
+	app.use(async (req, res, next) => {
+		if (
+			req.method !== "GET" ||
+			!["/", "/shop", "/login", "/registration", "/reset-pass"].includes(
+				req.path,
+			)
+		) {
+			next();
+			return;
+		}
+		res.set("Cache-Control", "no-store");
+		const cartId = readCartId(req);
+		if (cartId) {
+			try {
+				res.locals.cartCount = (await cartService.get(cartId)).count;
+			} catch (error) {
+				console.error("Failed to load cart count", error);
+				res.locals.cartCount = "?";
+			}
+		}
+		next();
 	});
 
-	app.get("/shop", async (_req: Request, res: Response) => {
-		const title = "Shop | Cue Corner";
+	app.use("/cart", createCartRouter(cartService));
+
+	app.get("/", async (_req: Request, res: Response) => {
+		const title = "Cue Corner | Pool & Snooker Equipment";
 		try {
-			const products = await productService.getAll();
-			res.render("shop", { title, products });
+			const products = (await productService.getAll()).slice(0, 4);
+			res.render("home-page", { title, products });
+		} catch (error) {
+			console.error("Failed to load featured products", error);
+			res.status(502).render("home-page", {
+				title,
+				products: [],
+				loadError: true,
+			});
+		}
+	});
+
+	app.get("/shop", async (req: Request, res: Response) => {
+		const title = "Shop | Cue Corner";
+		const rawCategory = req.query.category;
+
+		if (rawCategory !== undefined && typeof rawCategory !== "string") {
+			return res.status(400).render("shop", {
+				title,
+				products: [],
+				categories: [],
+				invalidCategory: true,
+			});
+		}
+
+		const selectedCategory = rawCategory?.trim() || undefined;
+
+		try {
+			const allProducts = await productService.getAll();
+			const categories = getCategories(allProducts);
+			const products = selectedCategory
+				? filterByCategory(allProducts, selectedCategory)
+				: allProducts;
+
+			return res.render("shop", {
+				title,
+				products,
+				categories,
+				selectedCategory,
+			});
 		} catch (error) {
 			console.error("Failed to load products", error);
-			res.status(502).render("shop", { title, products: [], loadError: true });
+			return res.status(502).render("shop", {
+				title,
+				products: [],
+				categories: [],
+				loadError: true,
+			});
 		}
 	});
 

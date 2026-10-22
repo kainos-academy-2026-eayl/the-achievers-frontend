@@ -1,0 +1,74 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/home-page.css">
+  <link rel="stylesheet" href="/css/cart.css">
+{% endblock %}
+
+{% block content %}
+  <section class="section cart-section" aria-labelledby="cart-title">
+    <div class="container">
+      <a class="cart-back" href="/shop">&larr; Continue shopping</a>
+      <div class="cart-heading">
+        <h1 id="cart-title">Shopping Cart</h1>
+        {% if cart %}<p>{{ cart.count }} item{% if cart.count != 1 %}s{% endif %}</p>{% endif %}
+      </div>
+
+      {% if cartError %}
+        <p class="cart-notice cart-error" role="alert">{{ cartError }}</p>
+      {% endif %}
+      {% if cartMessage %}
+        <p class="cart-notice" role="status">{{ cartMessage }}</p>
+      {% endif %}
+
+      {% if loadError %}
+        <div class="cart-empty" role="alert">
+          <h2>We can't load your cart right now</h2>
+          <p>Your cart could not be retrieved. Please try again.</p>
+          <a class="btn btn-gold" href="/cart">Try again</a>
+        </div>
+      {% elif not cart.items.length %}
+        <div class="cart-empty" role="status">
+          <h2>Your cart is empty</h2>
+          <p>Find your next perfect shot. Browse our cues, cases and accessories.</p>
+          <a class="btn btn-gold" href="/shop">Explore the shop</a>
+        </div>
+      {% else %}
+        <div class="cart-layout">
+          <ul class="cart-items" aria-label="Cart items">
+            {% for item in cart.items %}
+              <li class="cart-item">
+                <div class="placeholder placeholder-cue cart-product-image" aria-hidden="true"></div>
+                <div class="cart-item-details">
+                  <h2>{{ item.name }}</h2>
+                  <p class="cart-unit-price">{{ item.price }} each</p>
+                  <div class="cart-item-actions">
+                    <form action="/cart/items/update" method="post" class="quantity-form">
+                      <input type="hidden" name="productId" value="{{ item.productId }}">
+                      <label for="quantity-{{ loop.index }}">Quantity<span class="visually-hidden"> for {{ item.name }}</span></label>
+                      <input id="quantity-{{ loop.index }}" type="number" name="quantity" min="1" max="{{ maxCartQuantity }}" step="1" value="{{ item.quantity }}" required>
+                      <button class="btn btn-green btn-small" type="submit" aria-label="Update quantity for {{ item.name }}">Update</button>
+                    </form>
+                    <form action="/cart/items/remove" method="post">
+                      <input type="hidden" name="productId" value="{{ item.productId }}">
+                      <button type="submit" class="cart-remove" aria-label="Remove {{ item.name }} from cart">Remove</button>
+                    </form>
+                  </div>
+                </div>
+                <p class="cart-subtotal"><span>Subtotal</span><strong>{{ item.subtotal }}</strong></p>
+              </li>
+            {% endfor %}
+          </ul>
+
+          <aside class="cart-summary" aria-labelledby="summary-title">
+            <h2 id="summary-title">Order summary</h2>
+            <div class="cart-total"><span>Subtotal ({{ cart.count }} item{% if cart.count != 1 %}s{% endif %})</span><strong>{{ cart.total }}</strong></div>
+            <p>Delivery and any additional charges are calculated at checkout.</p>
+            <p class="cart-checkout-note">Review your items here. Checkout is not available yet.</p>
+            <a class="btn btn-gold" href="/shop">Continue shopping</a>
+          </aside>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}
