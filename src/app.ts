@@ -32,29 +32,45 @@ export function createApp(): Express {
 		const trimmedName = typeof name === "string" ? name.trim() : "";
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
 
-		if (!trimmedName || !trimmedEmail?.includes("@") || typeof password !== "string" || !password) {
+		if (
+			!trimmedName ||
+			!trimmedEmail?.includes("@") ||
+			typeof password !== "string" ||
+			!password
+		) {
 			return res.status(400).render("registration", {
 				title: "Register | Cue Corner",
 				registrationError: true,
-				registrationMessage: "Please provide a name, valid email address, and password.",
+				registrationMessage:
+					"Please provide a name, valid email address, and password.",
 				name: trimmedName,
 				email: trimmedEmail,
 			});
 		}
 
 		try {
-			const backendResponse = await fetch("http://localhost:3000/api/register", {
-				method: "POST",
-				headers: { "Content-Type": "application/json" },
-				body: JSON.stringify({ name: trimmedName, email: trimmedEmail, password }),
-			});
+			const backendResponse = await fetch(
+				"http://localhost:3000/api/register",
+				{
+					method: "POST",
+					headers: { "Content-Type": "application/json" },
+					body: JSON.stringify({
+						name: trimmedName,
+						email: trimmedEmail,
+						password,
+					}),
+				},
+			);
 
 			if (!backendResponse.ok) {
-				console.error(`Registration backend returned status ${backendResponse.status}.`);
+				console.error(
+					`Registration backend returned status ${backendResponse.status}.`,
+				);
 				return res.status(502).render("registration", {
 					title: "Register | Cue Corner",
 					registrationError: true,
-					registrationMessage: "The registration service could not complete your request. Please try again.",
+					registrationMessage:
+						"The registration service could not complete your request. Please try again.",
 					name: trimmedName,
 					email: trimmedEmail,
 				});
@@ -64,7 +80,8 @@ export function createApp(): Express {
 			return res.status(502).render("registration", {
 				title: "Register | Cue Corner",
 				registrationError: true,
-				registrationMessage: "The registration service is unavailable. Please try again.",
+				registrationMessage:
+					"The registration service is unavailable. Please try again.",
 				name: trimmedName,
 				email: trimmedEmail,
 			});

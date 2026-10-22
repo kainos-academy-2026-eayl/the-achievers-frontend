@@ -8,7 +8,10 @@ describe('POST /registration', () => {
         vi.restoreAllMocks();
     });
 
-    it('registers through the real backend and confirms receipt', async () => {
+    it('forwards registration details and confirms receipt', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(null, { status: 201 }),
+        );
         const app = createApp();
         const email = `registration-test-${randomUUID()}@example.com`;
 
@@ -21,6 +24,11 @@ describe('POST /registration', () => {
         expect(response.status).toBe(202);
         expect(response.text).toContain('Your registration details were received.');
         expect(response.text).not.toContain('secure-password');
+        expect(fetchSpy).toHaveBeenCalledWith('http://localhost:3000/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ name: 'Cue User', email, password: 'secure-password' }),
+        });
     }, 15_000);
 
     it('rejects incomplete registration details', async () => {
