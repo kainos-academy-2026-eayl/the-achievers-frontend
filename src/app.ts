@@ -28,7 +28,7 @@ export function createApp(): Express {
 	});
 
 	app.post("/registration", async (req: Request, res: Response) => {
-		const { name, email, password } = req.body;
+		const { name, email, password } = req.body ?? {};
 		const trimmedName = typeof name === "string" ? name.trim() : "";
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
 
