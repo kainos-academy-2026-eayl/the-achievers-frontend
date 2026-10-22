@@ -47,7 +47,8 @@
     font-weight: 600;
 }
 
-.auth-field input {
+.auth-field input,
+.auth-field select {
     width: 100%;
     min-width: 0;
     min-height: 48px;
@@ -59,7 +60,12 @@
     font: inherit;
 }
 
-.auth-field input:focus {
+.auth-field select {
+    cursor: pointer;
+}
+
+.auth-field input:focus,
+.auth-field select:focus {
     border-color: var(--green-700);
 }
 

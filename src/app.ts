@@ -5,7 +5,7 @@ import { ProductService } from "./services/productService";
 
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
-		new ProductClient(process.env.BACKEND_URL ?? "http://localhost:3001"),
+		new ProductClient(process.env.BACKEND_URL ?? "http://localhost:3000"),
 	),
 ): Express {
 	const app = express();
@@ -49,9 +49,21 @@ export function createApp(
 	});
 
 	app.post("/registration", async (req: Request, res: Response) => {
-		const { name, email, password, confirmPassword } = req.body ?? {};
+		const { name, email, password, confirmPassword, safeWordHint, safeWord } =
+			req.body ?? {};
 		const trimmedName = typeof name === "string" ? name.trim() : "";
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
+		const selectedHint =
+			typeof safeWordHint === "string" &&
+			[
+				"mothers-maiden-name",
+				"favourite-movie",
+				"first-pet",
+				"childhood-friend",
+				"holiday",
+			].includes(safeWordHint)
+				? safeWordHint
+				: "";
 
 		if (
 			!trimmedName ||
@@ -68,6 +80,7 @@ export function createApp(
 					"Please provide a name, valid email address, password, and password confirmation.",
 				name: trimmedName,
 				email: trimmedEmail,
+				safeWordHint: selectedHint,
 			});
 		}
 
@@ -78,12 +91,24 @@ export function createApp(
 				registrationMessage: "Your passwords do not match.",
 				name: trimmedName,
 				email: trimmedEmail,
+				safeWordHint: selectedHint,
+			});
+		}
+
+		if (!selectedHint || typeof safeWord !== "string" || !safeWord.trim()) {
+			return res.status(400).render("registration", {
+				title: "Register | Cue Corner",
+				registrationError: true,
+				registrationMessage: "Please choose a safe word hint and enter a safe word.",
+				name: trimmedName,
+				email: trimmedEmail,
+				safeWordHint: selectedHint,
 			});
 		}
 
 		try {
 			const backendResponse = await fetch(
-				`${process.env.BACKEND_URL ?? "http://localhost:3001"}/api/register`,
+				`${process.env.BACKEND_URL ?? "http://localhost:3000"}/api/register`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },
@@ -91,6 +116,8 @@ export function createApp(
 						name: trimmedName,
 						email: trimmedEmail,
 						password,
+						safeWordHint: selectedHint,
+						safeWord,
 					}),
 				},
 			);
@@ -106,6 +133,7 @@ export function createApp(
 						"The registration service could not complete your request. Please try again.",
 					name: trimmedName,
 					email: trimmedEmail,
+					safeWordHint: selectedHint,
 				});
 			}
 		} catch (error) {
@@ -117,6 +145,7 @@ export function createApp(
 					"The registration service is unavailable. Please try again.",
 				name: trimmedName,
 				email: trimmedEmail,
+				safeWordHint: selectedHint,
 			});
 		}
 
