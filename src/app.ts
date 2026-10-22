@@ -49,7 +49,7 @@ export function createApp(
 	});
 
 	app.post("/registration", async (req: Request, res: Response) => {
-		const { name, email, password } = req.body ?? {};
+		const { name, email, password, confirmPassword } = req.body ?? {};
 		const trimmedName = typeof name === "string" ? name.trim() : "";
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
 
@@ -57,13 +57,25 @@ export function createApp(
 			!trimmedName ||
 			!/^[^\s@]+@[^\s@]+$/.test(trimmedEmail) ||
 			typeof password !== "string" ||
-			!password
+			!password ||
+			typeof confirmPassword !== "string" ||
+			!confirmPassword
 		) {
 			return res.status(400).render("registration", {
 				title: "Register | Cue Corner",
 				registrationError: true,
 				registrationMessage:
-					"Please provide a name, valid email address, and password.",
+					"Please provide a name, valid email address, password, and password confirmation.",
+				name: trimmedName,
+				email: trimmedEmail,
+			});
+		}
+
+		if (password !== confirmPassword) {
+			return res.status(400).render("registration", {
+				title: "Register | Cue Corner",
+				registrationError: true,
+				registrationMessage: "Your passwords do not match.",
 				name: trimmedName,
 				email: trimmedEmail,
 			});
