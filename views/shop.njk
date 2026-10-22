@@ -9,16 +9,45 @@
   <section class="section" aria-labelledby="shop-title">
     <div class="container">
       <div class="results-bar">
-        <h1 id="shop-title" class="results-title">All Products</h1>
+        <h1 id="shop-title" class="results-title">{{ selectedCategory if selectedCategory else "All Products" }}</h1>
         {% if products.length %}
           <p class="results-count">{{ products.length }} result{% if products.length != 1 %}s{% endif %}</p>
         {% endif %}
       </div>
 
+      {% if not loadError %}
+        <nav class="category-filter" aria-label="Filter by category">
+          {% if categories.length %}
+            <ul class="category-list" role="list">
+              <li>
+                <a class="category-chip" href="/shop"{% if not selectedCategory %} aria-current="page"{% endif %}>All</a>
+              </li>
+              {% for category in categories %}
+                <li>
+                  <a class="category-chip" href="/shop?category={{ category | urlencode }}"{% if category == selectedCategory %} aria-current="page"{% endif %}>{{ category }}</a>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p class="category-empty" role="status">No categories available.</p>
+          {% endif %}
+        </nav>
+      {% endif %}
+
       {% if loadError %}
         <div class="catalogue-message" role="alert">
           <h2>We can't show products right now</h2>
           <p>Something went wrong while loading the catalogue. Please try again later.</p>
+        </div>
+      {% elif invalidCategory %}
+        <div class="catalogue-message" role="alert">
+          <h2>Invalid category</h2>
+          <p>The selected category could not be applied. <a href="/shop">View all products</a>.</p>
+        </div>
+      {% elif selectedCategory and not products.length %}
+        <div class="catalogue-message" role="status">
+          <h2>No products found</h2>
+          <p>There are no products in "{{ selectedCategory }}". <a href="/shop">Clear filter</a> to view all products.</p>
         </div>
       {% elif not products.length %}
         <div class="catalogue-message" role="status">

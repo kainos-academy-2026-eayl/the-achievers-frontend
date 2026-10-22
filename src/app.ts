@@ -1,7 +1,11 @@
 import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
 import { ProductClient } from "./clients/productClient";
-import { ProductService } from "./services/productService";
+import {
+	filterByCategory,
+	getCategories,
+	ProductService,
+} from "./services/productService";
 
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
@@ -25,14 +29,42 @@ export function createApp(
 		res.render("home-page", { title: "Cue Corner | Pool & Snooker Equipment" });
 	});
 
-	app.get("/shop", async (_req: Request, res: Response) => {
+	app.get("/shop", async (req: Request, res: Response) => {
 		const title = "Shop | Cue Corner";
+		const rawCategory = req.query.category;
+
+		if (rawCategory !== undefined && typeof rawCategory !== "string") {
+			return res.status(400).render("shop", {
+				title,
+				products: [],
+				categories: [],
+				invalidCategory: true,
+			});
+		}
+
+		const selectedCategory = rawCategory?.trim() || undefined;
+
 		try {
-			const products = await productService.getAll();
-			res.render("shop", { title, products });
+			const allProducts = await productService.getAll();
+			const categories = getCategories(allProducts);
+			const products = selectedCategory
+				? filterByCategory(allProducts, selectedCategory)
+				: allProducts;
+
+			return res.render("shop", {
+				title,
+				products,
+				categories,
+				selectedCategory,
+			});
 		} catch (error) {
 			console.error("Failed to load products", error);
-			res.status(502).render("shop", { title, products: [], loadError: true });
+			return res.status(502).render("shop", {
+				title,
+				products: [],
+				categories: [],
+				loadError: true,
+			});
 		}
 	});
 
