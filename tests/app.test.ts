@@ -18,7 +18,12 @@ describe('POST /registration', () => {
         const response = await request(app)
             .post('/registration')
             .type('form')
-            .send({ name: 'Cue User', email, password: 'secure-password' })
+            .send({
+                name: 'Cue User',
+                email,
+                password: 'secure-password',
+                confirmPassword: 'secure-password',
+            })
             .timeout({ response: 10_000, deadline: 12_000 });
 
         expect(response.status).toBe(202);
@@ -38,10 +43,37 @@ describe('POST /registration', () => {
         const response = await request(app)
             .post('/registration')
             .type('form')
-            .send({ name: 'Cue User', email: 'not-an-email', password: '' });
+            .send({
+                name: 'Cue User',
+                email: 'not-an-email',
+                password: '',
+                confirmPassword: '',
+            });
 
         expect(response.status).toBe(400);
-        expect(response.text).toContain('Please provide a name, valid email address, and password.');
+        expect(response.text).toContain(
+            'Please provide a name, valid email address, password, and password confirmation.',
+        );
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('rejects passwords that do not match', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+        const app = createApp();
+
+        const response = await request(app)
+            .post('/registration')
+            .type('form')
+            .send({
+                name: 'Cue User',
+                email: 'cue-user@example.com',
+                password: 'secure-password',
+                confirmPassword: 'different-password',
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.text).toContain('Your passwords do not match.');
+        expect(response.text).not.toContain('secure-password');
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
