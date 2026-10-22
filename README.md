@@ -39,11 +39,11 @@ npm run dev        # start the service with hot reload
 Then in another terminal:
 
 ```sh
-curl http://localhost:3000/health
+curl http://localhost:3002/health
 # {"status":"ok","uptime":1.234}
 ```
 
-The frontend listens on the port configured by `PORT`. Backend requests use `API_BASE_URL`, falling back to `BACKEND_URL` and then `http://localhost:3000`. The frontend and backend must use different ports. The `.env.example` defaults to frontend port `3002` and backend port `3000`.
+The frontend listens on the port configured by `PORT`. Backend requests use `API_BASE_URL`, falling back to `BACKEND_URL` and then `http://localhost:3000`. The frontend and backend must use different ports. The `.env.example` defaults to frontend port `3002` and backend port `3000`. Product, registration, and cart requests are forwarded to that backend.
 
 ### Login
 
@@ -186,11 +186,121 @@ Environment variables are loaded from `.env` by [dotenv](https://github.com/motd
 | Variable | Required | Description |
 | --- | --- | --- |
 | `PORT` | yes | Port the service listens on. The service exits at startup if it is missing or invalid. |
-| `API_BASE_URL` | no | Backend base URL for login, registration, and products. Takes precedence over `BACKEND_URL`. |
+| `API_BASE_URL` | no | Backend base URL for login, registration, products, and cart. Takes precedence over `BACKEND_URL`. |
 | `BACKEND_URL` | no | Backwards-compatible backend base URL. Defaults to `http://localhost:3000`; frontend `PORT` must be different. |
 | `SESSION_SECRET` | in production | Random secret used to sign session-ID cookies, not the backend JWT secret. Development uses an ephemeral random secret if omitted. |
 
 The server binds to `0.0.0.0` so it is reachable from outside a container. Add new variables to both your `.env` and [.env.example](.env.example).
+
+## Shopping cart
+
+Visit **`GET /cart`** to review the shopping cart. Home and Shop use real products from
+`GET /api/products`; their Add to Cart forms send the selected product ID, not a
+browser-supplied price. The home page features the first four catalogue products.
+
+The cart shows GBP unit prices, quantities, line subtotals and an order subtotal.
+Change a quantity and select **Update**, or select **Remove**. Each successful
+change redirects to a fresh backend-backed cart, updating all prices and the
+header badge. The badge counts units, not distinct products, and remains current
+when navigating back to Home or Shop. No browser JavaScript is required.
+Checkout is not implemented; delivery/additional charges are not included.
+
+### Backend contract
+
+The cart endpoints are implemented in `the-achievers-backend`. Apply that
+repository's Prisma migrations before starting the backend on port 3000.
+If the backend is unavailable, the frontend displays a service error, not a
+misleading empty cart or a local-only success.
+
+All calls go from the frontend server to the configured backend base URL, using
+JSON and an `X-Cart-Id` header containing a random UUID v4. The frontend creates a
+`cue_cart` cookie (HttpOnly, SameSite=Lax, Secure in production)
+to keep each browser's anonymous cart separate across navigation and restarts.
+There is no signed-in customer integration in this repository yet. The cart ID
+is a bearer capability: keep it private, use HTTPS in production, validate it
+on the backend, and scope every read/write to it. Do not expose cart lookup by
+customer ID. Clear/merge anonymous carts explicitly when authentication is added.
+
+| Backend method and endpoint | Request body | Successful response |
+| --- | --- | --- |
+| `GET /api/cart` | None | `200`, JSON as below; a new/empty cart must return `{"items":[]}`, not `404` |
+| `POST /api/cart/items` | `{"productId":"cue-1","quantity":1}` | `200`, updated cart; add units to an existing line, or create a new line |
+| `PATCH /api/cart/items/:productId` | `{"quantity":3}` | `200`, updated cart; replace the existing quantity |
+| `DELETE /api/cart/items/:productId` | None | `200`, updated cart; remove the line (safe to repeat) |
+
+`:productId` is URL-encoded and is the same string ID returned by the catalogue.
+Mutation response bodies are ignored; the redirected cart page reads the
+authoritative state with `GET /api/cart`.
+
+Example `GET /api/cart` response:
+
+```json
+{
+  "items": [
+    {
+      "product": {
+        "id": "cue-1",
+        "name": "Pro Series Maple Cue",
+        "price": 89.99
+      },
+      "quantity": 2
+    }
+  ]
+}
+```
+
+The sample ID `cue-1` is illustrative. The seeded Maple Cue has ID
+`pro-series-maple-cue`; Home and Shop use the actual IDs from the catalogue.
+
+Prices must be finite, non-negative JSON numbers in GBP, with at most two
+decimal places. Quantities must be integers from `1` to `2147483647`, including
+the accumulated quantity after adding units. Use Remove rather than setting
+quantity to zero. Each product appears at most once.
+The frontend calculates subtotals in integer pennies, validates
+the complete cart, and rejects malformed data rather than dropping products or
+displaying incorrect totals.
+
+The backend must persist carts in shared durable storage (not process memory),
+validate product IDs and quantities, obtain prices from its own catalogue,
+and update quantities atomically. Adding the same product must increment the
+existing quantity atomically. Never trust client-supplied prices or ownership
+claims.
+
+Return `400` for invalid input, `404` for a missing product/line and `409` for a
+product without a valid price. The frontend presents these as a rejected change
+and reloads the cart. Other HTTP/network/timeout failures produce a `502` error page with a
+retry link or a message to check the current cart before retrying a change.
+Writes are not automatically retried (to avoid duplicate additions).
+Backend calls have a five-second deadline; personalized pages use
+`Cache-Control: no-store`. Header count failures show `?`, not zero.
+
+Frontend form routes (these render/redirect HTML, not JSON):
+
+| Frontend route | Fields |
+| --- | --- |
+| `POST /cart/items/add` | `productId`, `quantity` |
+| `POST /cart/items/update` | `productId`, `quantity` |
+| `POST /cart/items/remove` | `productId` |
+
+Run `npm test -- tests/cart.test.ts tests/shop.test.ts tests/app.test.ts` for cart
+journeys, calculations, validation, isolation, failure handling, catalogue
+integration and backend request contract tests. These use test doubles; they do
+not certify a real backend deployment. No numeric platform latency/availability
+target was supplied: load/SLA validation remains necessary before deployment,
+and the five-second timeout is a client safeguard, not an SLA guarantee.
+
+To verify a real backend, use a disposable backend database, apply its migrations
+and run `npx prisma db seed` in the backend repository. Start the backend using
+that database, then run this command in the frontend repository:
+
+```sh
+CART_INTEGRATION_BACKEND_URL=http://localhost:3000 npm test -- tests/cart.integration.test.ts
+```
+
+This test uses the real HTTP clients and seeded products, checks the rendered
+cart totals and quantities, exercises updates/removals, verifies browser cart
+isolation, and removes its own cart items afterwards. It is skipped when the URL
+is unset; never point it at a production backend.
 
 ## Troubleshooting
 

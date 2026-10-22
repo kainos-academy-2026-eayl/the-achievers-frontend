@@ -50,6 +50,19 @@ export function toProductViewModel(raw: unknown): ProductViewModel | null {
 	};
 }
 
+export function getCategories(products: ProductViewModel[]): string[] {
+	return [...new Set(products.map((product) => product.category))].sort(
+		(a, b) => a.localeCompare(b),
+	);
+}
+
+export function filterByCategory(
+	products: ProductViewModel[],
+	category: string,
+): ProductViewModel[] {
+	return products.filter((product) => product.category === category);
+}
+
 export class ProductService {
 	constructor(private readonly productClient: Pick<ProductClient, "getAll">) {}
 
