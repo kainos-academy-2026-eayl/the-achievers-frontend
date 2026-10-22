@@ -8,12 +8,12 @@
   <section class="auth-page" aria-labelledby="login-title">
   <div class="auth-card">
     <h1 id="login-title">Login</h1>
-    <p class="auth-notice" id="login-notice">Demo only. This form does not sign you in or send your details.</p>
+    <p class="auth-notice" id="login-notice" role="{{ 'alert' if loginError else 'status' }}">{{ loginMessage | default("Enter your email and password to sign in.") }}</p>
 
-    <form class="auth-form" aria-describedby="login-notice" onsubmit="event.preventDefault()">
+    <form class="auth-form" action="/login" method="post" aria-describedby="login-notice">
       <div class="auth-field">
         <label for="login-email">Email</label>
-        <input id="login-email" name="email" type="email" autocomplete="username" required>
+        <input id="login-email" name="email" type="email" autocomplete="username" value="{{ email | default('') }}" required>
       </div>
 
       <div class="auth-field">
