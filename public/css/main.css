@@ -49,6 +49,22 @@ ul {
     margin-inline: auto;
 }
 
+/* Product image stand-in until real photos exist */
+.product-image {
+    display: grid;
+    place-items: center;
+    aspect-ratio: 4 / 3;
+    background: #f3f4f3;
+    border-radius: 6px;
+}
+
+.product-image img {
+    width: 45%;
+    opacity: 0.35;
+    filter: grayscale(30%);
+    transition: transform 0.3s ease;
+}
+
 /* ===== Accessibility helpers ===== */
 .visually-hidden {
     position: absolute;
@@ -170,11 +186,11 @@ ul {
 
 /* Search bar: fills the space between the logo and the actions */
 .search {
+    position: relative;
     display: flex;
     flex: 1 1 auto;
     align-items: stretch;
     height: 2.75rem;
-    overflow: hidden;
     background: var(--white);
     border: 2px solid var(--gold);
     border-radius: 999px;
@@ -208,6 +224,7 @@ ul {
     background: var(--gold);
     color: var(--black);
     cursor: pointer;
+    border-radius: 0 999px 999px 0;
     transition: background-color 0.15s ease;
 }
 

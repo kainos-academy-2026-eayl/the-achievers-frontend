@@ -1,39 +1,59 @@
 {% extends "layout.njk" %}
 
 {% block styles %}
-  <link rel="stylesheet" href="/css/home-page.css">
   <link rel="stylesheet" href="/css/shop.css">
 {% endblock %}
 
 {% block content %}
-  <section class="section" aria-labelledby="shop-title">
+  <section class="shop" aria-labelledby="shop-title">
     <div class="container">
-      <div class="results-bar">
-        <h1 id="shop-title" class="results-title">{{ selectedCategory if selectedCategory else "All Products" }}</h1>
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          {% if selectedCategory %}
+            <li><a href="/shop">Shop</a></li>
+            <li aria-current="page">{{ selectedCategory }}</li>
+          {% else %}
+            <li aria-current="page">Shop</li>
+          {% endif %}
+        </ol>
+      </nav>
+
+      <header class="shop-header">
+        <h1 id="shop-title" class="shop-title">
+          {%- if searchQuery %}Results for "{{ searchQuery }}"{% if selectedCategory %} in {{ selectedCategory }}{% endif %}
+          {%- elif selectedCategory %}{{ selectedCategory }}
+          {%- else %}All Products{% endif -%}
+        </h1>
         {% if products.length %}
           <p class="results-count">{{ products.length }} result{% if products.length != 1 %}s{% endif %}</p>
         {% endif %}
-      </div>
+      </header>
 
+      <div class="shop-layout">
       {% if not loadError %}
-        <nav class="category-filter" aria-label="Filter by category">
-          {% if categories.length %}
-            <ul class="category-list" role="list">
-              <li>
-                <a class="category-chip" href="/shop"{% if not selectedCategory %} aria-current="page"{% endif %}>All</a>
-              </li>
-              {% for category in categories %}
+        <aside class="shop-sidebar">
+          <nav class="category-filter" aria-labelledby="category-filter-title">
+            <h2 id="category-filter-title" class="sidebar-title">Categories</h2>
+            {% if categories.length %}
+              <ul class="category-list" role="list">
                 <li>
-                  <a class="category-chip" href="/shop?category={{ category | urlencode }}"{% if category == selectedCategory %} aria-current="page"{% endif %}>{{ category }}</a>
+                  <a class="category-link" href="/shop{% if searchQuery %}?q={{ searchQuery | urlencode }}{% endif %}"{% if not selectedCategory %} aria-current="page"{% endif %}>All products</a>
                 </li>
-              {% endfor %}
-            </ul>
-          {% else %}
-            <p class="category-empty" role="status">No categories available.</p>
-          {% endif %}
-        </nav>
+                {% for category in categories %}
+                  <li>
+                    <a class="category-link" href="/shop?category={{ category | urlencode }}{% if searchQuery %}&amp;q={{ searchQuery | urlencode }}{% endif %}"{% if category == selectedCategory %} aria-current="page"{% endif %}>{{ category }}</a>
+                  </li>
+                {% endfor %}
+              </ul>
+            {% else %}
+              <p class="category-empty" role="status">No categories available.</p>
+            {% endif %}
+          </nav>
+        </aside>
       {% endif %}
 
+      <div class="shop-results">
       {% if loadError %}
         <div class="catalogue-message" role="alert">
           <h2>We can't show products right now</h2>
@@ -43,6 +63,16 @@
         <div class="catalogue-message" role="alert">
           <h2>Invalid category</h2>
           <p>The selected category could not be applied. <a href="/shop">View all products</a>.</p>
+        </div>
+      {% elif invalidSearch %}
+        <div class="catalogue-message" role="alert">
+          <h2>Invalid search</h2>
+          <p>Your search could not be applied. <a href="/shop">View all products</a>.</p>
+        </div>
+      {% elif searchQuery and not products.length %}
+        <div class="catalogue-message" role="status">
+          <h2>No products found</h2>
+          <p>No products match "{{ searchQuery }}"{% if selectedCategory %} in "{{ selectedCategory }}"{% endif %}. Try a different search or <a href="/shop">view all products</a>.</p>
         </div>
       {% elif selectedCategory and not products.length %}
         <div class="catalogue-message" role="status">
@@ -55,38 +85,47 @@
           <p>There are currently no products in the catalogue. Please check back soon.</p>
         </div>
       {% else %}
-        {% set placeholders = cycler("cue", "case", "ball", "acc") %}
         <ul class="catalogue-grid" role="list">
           {% for product in products %}
             <li>
-              <article class="card catalogue-card" aria-labelledby="product-{{ product.id }}">
-                <div class="placeholder placeholder-{{ placeholders.next() }}" aria-hidden="true"></div>
-                <p class="product-category">{{ product.category }}</p>
-                <h2 id="product-{{ product.id }}" class="product-name">{{ product.name }}</h2>
-
-                <div class="product-rating">
-                  {% if product.rating is number %}
-                    <span class="stars" role="img" aria-label="Rated {{ product.rating }} out of 5">
-                      <span class="stars-fill" style="width: {{ product.ratingPercent }}%"></span>
-                    </span>
-                    <span class="review-count">({{ product.reviewCount }})</span>
-                  {% else %}
-                    <span class="review-count">No reviews yet</span>
-                  {% endif %}
+              <article class="product-tile" aria-labelledby="product-{{ product.id }}">
+                <div class="product-image" aria-hidden="true">
+                  <img src="/css/images/cc-icon.png" alt="" loading="lazy">
                 </div>
 
-                <p class="product-description">{{ product.description }}</p>
-                <p class="price">{{ product.price }}</p>
-                <form action="/cart/items/add" method="post">
-                  <input type="hidden" name="productId" value="{{ product.id }}">
-                  <input type="hidden" name="quantity" value="1">
-                  <button type="submit" class="btn btn-gold" aria-label="Add {{ product.name }} to cart">Add to Cart</button>
-                </form>
+                <div class="product-body">
+                  <p class="product-category">{{ product.category }}</p>
+                  <h2 id="product-{{ product.id }}" class="product-name">{{ product.name }}</h2>
+
+                  <div class="product-rating">
+                    {% if product.rating is number %}
+                      <span class="stars" role="img" aria-label="Rated {{ product.rating }} out of 5">
+                        <span class="stars-fill" style="width: {{ product.ratingPercent }}%"></span>
+                      </span>
+                      <span class="review-count">({{ product.reviewCount }})</span>
+                    {% else %}
+                      <span class="review-count">No reviews yet</span>
+                    {% endif %}
+                  </div>
+
+                  <p class="product-description">{{ product.description }}</p>
+
+                  <div class="product-footer">
+                    <p class="product-price">{{ product.price }}</p>
+                    <form action="/cart/items/add" method="post">
+                      <input type="hidden" name="productId" value="{{ product.id }}">
+                      <input type="hidden" name="quantity" value="1">
+                      <button type="submit" class="add-to-cart" aria-label="Add {{ product.name }} to cart">Add to cart</button>
+                    </form>
+                  </div>
+                </div>
               </article>
             </li>
           {% endfor %}
         </ul>
       {% endif %}
+      </div>
+      </div>
     </div>
   </section>
 {% endblock %}

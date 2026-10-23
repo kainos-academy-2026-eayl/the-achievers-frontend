@@ -49,11 +49,12 @@
       {% elif not products.length %}
         <p>No products available. Please check back soon.</p>
       {% else %}
-      {% set placeholders = cycler("cue", "case", "ball", "acc") %}
       <div class="grid grid-4">
         {% for product in products %}
         <article class="card product-card">
-          <div class="placeholder placeholder-{{ placeholders.next() }}" aria-hidden="true"></div>
+          <div class="product-image" aria-hidden="true">
+            <img src="/css/images/cc-icon.png" alt="" loading="lazy">
+          </div>
           <h3>{{ product.name }}</h3>
           <p class="price">{{ product.price }}</p>
           <form action="/cart/items/add" method="post">
