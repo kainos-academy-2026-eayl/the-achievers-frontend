@@ -104,9 +104,47 @@ describe('POST /registration', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.text).toContain(
-            'Please provide a name, valid email address, password, and password confirmation.',
-        );
+        expect(response.text).toContain('Enter a valid email address, for example name@example.com.');
+        expect(response.text).toContain('Enter a password.');
+        expect(response.text).toContain('Confirm your password.');
+        expect(response.text).toContain('Choose a safe word hint.');
+        expect(response.text).toContain('Enter a safe word.');
+        expect(response.text).not.toContain('Enter your name.');
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('asks for a name and email when they are missing', async () => {
+        const response = await request(createApp())
+            .post('/registration')
+            .type('form')
+            .send({ name: '  ', email: '' });
+
+        expect(response.status).toBe(400);
+        expect(response.text).toContain('Enter your name.');
+        expect(response.text).toContain('Enter your email address.');
+    });
+
+    it.each([
+        ['short-pass', 'Your password must be at least 12 characters long.'],
+        ['x'.repeat(129), 'Your password must be no more than 128 characters long.'],
+    ])('rejects password %#', async (password, message) => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+        const app = createApp();
+
+        const response = await request(app)
+            .post('/registration')
+            .type('form')
+            .send({
+                name: 'Cue User',
+                email: 'cue-user@example.com',
+                password,
+                confirmPassword: password,
+                safeWordHint: 'first-pet',
+                safeWord: 'private-safe-word',
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.text).toContain(message);
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
@@ -131,12 +169,12 @@ describe('POST /registration', () => {
     });
 
     it.each([
-        { safeWordHint: undefined, safeWord: 'private-safe-word' },
-        { safeWordHint: 'unknown-hint', safeWord: 'private-safe-word' },
-        { safeWordHint: ['first-pet', 'holiday'], safeWord: 'private-safe-word' },
-        { safeWordHint: 'first-pet', safeWord: undefined },
-        { safeWordHint: 'first-pet', safeWord: '   ' },
-    ])('rejects invalid safe word details: %j', async (safeWordDetails) => {
+        [{ safeWordHint: undefined, safeWord: 'private-safe-word' }, 'Choose a safe word hint.'],
+        [{ safeWordHint: 'unknown-hint', safeWord: 'private-safe-word' }, 'Choose a safe word hint.'],
+        [{ safeWordHint: ['first-pet', 'holiday'], safeWord: 'private-safe-word' }, 'Choose a safe word hint.'],
+        [{ safeWordHint: 'first-pet', safeWord: undefined }, 'Enter a safe word.'],
+        [{ safeWordHint: 'first-pet', safeWord: '   ' }, 'Enter a safe word.'],
+    ])('rejects invalid safe word details: %j', async (safeWordDetails, message) => {
         const fetchSpy = vi.spyOn(globalThis, 'fetch');
         const response = await request(createApp())
             .post('/registration')
@@ -150,9 +188,29 @@ describe('POST /registration', () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.text).toContain('Please choose a safe word hint and enter a safe word.');
+        expect(response.text).toContain(message);
         expect(response.text).not.toContain('private-safe-word');
         expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('tells the user when the email is already registered', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 409 }));
+
+        const response = await request(createApp())
+            .post('/registration')
+            .type('form')
+            .send({
+                name: 'Cue User',
+                email: 'cue-user@example.com',
+                password: 'secure-password',
+                confirmPassword: 'secure-password',
+                safeWordHint: 'first-pet',
+                safeWord: 'private-safe-word',
+            });
+
+        expect(response.status).toBe(409);
+        expect(response.text).toContain('An account with this email already exists. Try logging in instead.');
+        expect(response.text).toContain('value="cue-user@example.com"');
     });
 
     it.each(['rejected', 'unavailable'])('preserves the hint when the backend is %s', async (failure) => {
