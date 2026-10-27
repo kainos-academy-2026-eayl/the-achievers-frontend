@@ -8,7 +8,7 @@
 {% block content %}
   <section class="section cart-section" aria-labelledby="cart-title">
     <div class="container">
-      <a class="cart-back" href="/shop">&larr; Continue shopping</a>
+      <a class="cart-back" href="/shop{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}">&larr; Continue shopping</a>
       <div class="cart-heading">
         <h1 id="cart-title">Shopping Cart</h1>
         {% if cart %}<p>{{ cart.count }} item{% if cart.count != 1 %}s{% endif %}</p>{% endif %}
@@ -21,7 +21,30 @@
         <p class="cart-notice" role="status">{{ cartMessage }}</p>
       {% endif %}
 
-      {% if loadError %}
+      {% if addressRequired %}
+        <div class="cart-address" aria-labelledby="cart-address-title">
+          <h2 id="cart-address-title">Enter your UK delivery address</h2>
+          <p>We need a delivery address before cart changes or shipping estimates are available. We use your postcode for the estimate and do not save the street address.</p>
+          <form action="/cart/delivery-address" method="post" class="cart-address-form">
+            <label for="delivery-full-name">Full name</label>
+            <input id="delivery-full-name" name="fullName" type="text" maxlength="200" autocomplete="name" required>
+
+            <label for="delivery-address-line-1">Address line 1</label>
+            <input id="delivery-address-line-1" name="addressLine1" type="text" maxlength="200" autocomplete="address-line1" required>
+
+            <label for="delivery-address-line-2">Address line 2 (optional)</label>
+            <input id="delivery-address-line-2" name="addressLine2" type="text" maxlength="200" autocomplete="address-line2">
+
+            <label for="delivery-city">Town or city</label>
+            <input id="delivery-city" name="city" type="text" maxlength="100" autocomplete="address-level2" required>
+
+            <label for="delivery-postcode">UK postcode</label>
+            <input id="delivery-postcode" name="postcode" type="text" maxlength="10" autocomplete="postal-code" required>
+
+            <button type="submit" class="btn btn-green">Continue to cart</button>
+          </form>
+        </div>
+      {% elif loadError %}
         <div class="cart-empty" role="alert">
           <h2>We can't load your cart right now</h2>
           <p>Your cart could not be retrieved. Please try again.</p>
@@ -47,12 +70,16 @@
                   <div class="cart-item-actions">
                     <form action="/cart/items/update" method="post" class="quantity-form">
                       <input type="hidden" name="productId" value="{{ item.productId }}">
+                      <input type="hidden" name="country" value="{{ shippingDestination.country }}">
+                      <input type="hidden" name="postcode" value="{{ shippingDestination.postcode }}">
                       <label for="quantity-{{ loop.index }}">Quantity<span class="visually-hidden"> for {{ item.name }}</span></label>
                       <input id="quantity-{{ loop.index }}" type="number" name="quantity" min="1" max="{{ maxCartQuantity }}" step="1" value="{{ item.quantity }}" required>
                       <button class="btn btn-green btn-small" type="submit" aria-label="Update quantity for {{ item.name }}">Update</button>
                     </form>
                     <form action="/cart/items/remove" method="post">
                       <input type="hidden" name="productId" value="{{ item.productId }}">
+                      <input type="hidden" name="country" value="{{ shippingDestination.country }}">
+                      <input type="hidden" name="postcode" value="{{ shippingDestination.postcode }}">
                       <button type="submit" class="cart-remove" aria-label="Remove {{ item.name }} from cart">Remove</button>
                     </form>
                   </div>
@@ -65,9 +92,11 @@
           <aside class="cart-summary" aria-labelledby="summary-title">
             <h2 id="summary-title">Order summary</h2>
             <div class="cart-total"><span>Subtotal ({{ cart.count }} item{% if cart.count != 1 %}s{% endif %})</span><strong>{{ cart.total }}</strong></div>
-            <p>Delivery and any additional charges are calculated at checkout.</p>
+            <div class="cart-total"><span>Estimated shipping</span><strong>{{ cart.shippingEstimate }}</strong></div>
+            <div class="cart-total cart-estimated-total"><span>Estimated total</span><strong>{{ cart.estimatedTotal }}</strong></div>
+            <p>Shipping is an estimate and may change based on delivery details.</p>
             <p class="cart-checkout-note">Review your items here. Checkout is not available yet.</p>
-            <a class="btn btn-gold" href="/shop">Continue shopping</a>
+            <a class="btn btn-gold" href="/shop?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}">Continue shopping</a>
           </aside>
         </div>
       {% endif %}
