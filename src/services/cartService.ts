@@ -1,5 +1,6 @@
 import type { CartClient } from "../clients/cartClient";
 import type { CartItemViewModel, CartViewModel } from "../models/cartViewModel";
+import type { ShippingDestination } from "../models/shippingDestination";
 
 const currency = new Intl.NumberFormat("en-GB", {
 	style: "currency",
@@ -18,12 +19,14 @@ export class CartService {
 		>,
 	) {}
 
-	async get(cartId: string): Promise<CartViewModel> {
-		const data = await this.client.get(cartId);
+	async get(
+		cartId: string,
+		destination: ShippingDestination,
+	): Promise<CartViewModel> {
+		const data = await this.client.get(cartId, destination);
 		if (!isRecord(data) || !Array.isArray(data.items)) {
 			throw new Error("Unexpected cart response format");
 		}
-
 		let totalPence = 0;
 		let count = 0;
 		const productIds = new Set<string>();
@@ -71,18 +74,61 @@ export class CartService {
 			};
 		});
 
-		return { items, count, total: currency.format(totalPence / 100) };
+		const { estimatedShippingCost } = data;
+		if (
+			typeof estimatedShippingCost !== "number" ||
+			!Number.isFinite(estimatedShippingCost) ||
+			estimatedShippingCost < 0
+		) {
+			throw new Error("Invalid cart shipping estimate");
+		}
+		const shippingPence = Math.round(estimatedShippingCost * 100);
+		if (
+			Math.abs(estimatedShippingCost * 100 - shippingPence) > 0.000001 ||
+			!Number.isSafeInteger(shippingPence)
+		) {
+			throw new Error(
+				"Cart shipping estimate exceeds supported precision or range",
+			);
+		}
+
+		const estimatedTotalPence = totalPence + shippingPence;
+		if (!Number.isSafeInteger(estimatedTotalPence)) {
+			throw new Error("Cart total exceeds supported precision or range");
+		}
+
+		return {
+			items,
+			count,
+			total: currency.format(totalPence / 100),
+			shippingEstimate: currency.format(shippingPence / 100),
+			estimatedTotal: currency.format(estimatedTotalPence / 100),
+		};
 	}
 
-	add(cartId: string, productId: string, quantity: number): Promise<void> {
-		return this.client.add(cartId, productId, quantity);
+	add(
+		cartId: string,
+		productId: string,
+		quantity: number,
+		destination: ShippingDestination,
+	): Promise<void> {
+		return this.client.add(cartId, productId, quantity, destination);
 	}
 
-	update(cartId: string, productId: string, quantity: number): Promise<void> {
-		return this.client.update(cartId, productId, quantity);
+	update(
+		cartId: string,
+		productId: string,
+		quantity: number,
+		destination: ShippingDestination,
+	): Promise<void> {
+		return this.client.update(cartId, productId, quantity, destination);
 	}
 
-	remove(cartId: string, productId: string): Promise<void> {
-		return this.client.remove(cartId, productId);
+	remove(
+		cartId: string,
+		productId: string,
+		destination: ShippingDestination,
+	): Promise<void> {
+		return this.client.remove(cartId, productId, destination);
 	}
 }

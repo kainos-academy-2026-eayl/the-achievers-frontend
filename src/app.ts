@@ -15,6 +15,7 @@ import {
 	getCategories,
 	ProductService,
 } from "./services/productService";
+import { parseShippingDestination } from "./models/shippingDestination";
 
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
@@ -45,12 +46,22 @@ export function createApp(
 	});
 	app.set("view engine", "njk");
 
+	registerAuth(
+		app,
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+	);
+
 	app.use(async (req, res, next) => {
+		const destination = parseShippingDestination(
+			req.query.country,
+			req.query.postcode,
+		);
+		res.locals.shippingDestination = destination;
 		if (
 			req.method !== "GET" ||
-			!["/", "/shop", "/login", "/registration", "/reset-pass"].includes(
-				req.path,
-			)
+			!["/", "/shop", "/registration", "/reset-pass"].includes(req.path)
 		) {
 			next();
 			return;
@@ -58,8 +69,15 @@ export function createApp(
 		res.set("Cache-Control", "no-store");
 		const cartId = readCartId(req);
 		if (cartId) {
+			if (!destination) {
+				res.locals.cartCount = "?";
+				next();
+				return;
+			}
 			try {
-				res.locals.cartCount = (await cartService.get(cartId)).count;
+				res.locals.cartCount = (
+					await cartService.get(cartId, destination)
+				).count;
 			} catch (error) {
 				console.error("Failed to load cart count", error);
 				res.locals.cartCount = "?";
@@ -67,13 +85,6 @@ export function createApp(
 		}
 		next();
 	});
-
-	registerAuth(
-		app,
-		process.env.API_BASE_URL ??
-			process.env.BACKEND_URL ??
-			"http://localhost:3000",
-	);
 
 	app.use("/cart", createCartRouter(cartService));
 

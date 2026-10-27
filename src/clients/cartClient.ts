@@ -1,3 +1,5 @@
+import type { ShippingDestination } from "../models/shippingDestination";
+
 export class CartApiError extends Error {
 	constructor(public readonly status: number) {
 		super(`Cart request failed with status ${status}`);
@@ -11,9 +13,13 @@ export class CartClient {
 		cartId: string,
 		method: string,
 		path: string,
+		destination: ShippingDestination,
 		body?: { productId: string; quantity: number } | { quantity: number },
 	): Promise<Response> {
-		const response = await fetch(new URL(path, this.baseUrl), {
+		const url = new URL(path, this.baseUrl);
+		url.searchParams.set("country", destination.country);
+		url.searchParams.set("postcode", destination.postcode);
+		const response = await fetch(url, {
 			method,
 			headers: {
 				"Content-Type": "application/json",
@@ -29,8 +35,16 @@ export class CartClient {
 		return response;
 	}
 
-	async get(cartId: string): Promise<unknown> {
-		const response = await this.request(cartId, "GET", "/api/cart");
+	async get(
+		cartId: string,
+		destination: ShippingDestination,
+	): Promise<unknown> {
+		const response = await this.request(
+			cartId,
+			"GET",
+			"/api/cart",
+			destination,
+		);
 		return response.json();
 	}
 
@@ -38,8 +52,9 @@ export class CartClient {
 		cartId: string,
 		productId: string,
 		quantity: number,
+		destination: ShippingDestination,
 	): Promise<void> {
-		await this.request(cartId, "POST", "/api/cart/items", {
+		await this.request(cartId, "POST", "/api/cart/items", destination, {
 			productId,
 			quantity,
 		});
@@ -49,20 +64,27 @@ export class CartClient {
 		cartId: string,
 		productId: string,
 		quantity: number,
+		destination: ShippingDestination,
 	): Promise<void> {
 		await this.request(
 			cartId,
 			"PATCH",
 			`/api/cart/items/${encodeURIComponent(productId)}`,
+			destination,
 			{ quantity },
 		);
 	}
 
-	async remove(cartId: string, productId: string): Promise<void> {
+	async remove(
+		cartId: string,
+		productId: string,
+		destination: ShippingDestination,
+	): Promise<void> {
 		await this.request(
 			cartId,
 			"DELETE",
 			`/api/cart/items/${encodeURIComponent(productId)}`,
+			destination,
 		);
 	}
 }
