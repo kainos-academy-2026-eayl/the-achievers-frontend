@@ -9,6 +9,7 @@ import {
 	readCartId,
 } from "./controllers/cartController";
 import { CartService } from "./services/cartService";
+import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
 	filterByCategory,
 	getCategories,
@@ -79,8 +80,12 @@ export function createApp(
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
 		try {
-			const products = (await productService.getAll()).slice(0, 4);
-			res.render("home-page", { title, products });
+			const allProducts = await productService.getAll();
+			res.render("home-page", {
+				title,
+				products: allProducts.slice(0, 4),
+				productNames: allProducts.map((product) => product.name),
+			});
 		} catch (error) {
 			console.error("Failed to load featured products", error);
 			res.status(502).render("home-page", {
@@ -94,6 +99,7 @@ export function createApp(
 	app.get("/shop", async (req: Request, res: Response) => {
 		const title = "Shop | Cue Corner";
 		const rawCategory = req.query.category;
+		const rawQuery = req.query.q;
 
 		if (rawCategory !== undefined && typeof rawCategory !== "string") {
 			return res.status(400).render("shop", {
@@ -104,20 +110,36 @@ export function createApp(
 			});
 		}
 
+		if (rawQuery !== undefined && typeof rawQuery !== "string") {
+			return res.status(400).render("shop", {
+				title,
+				products: [],
+				categories: [],
+				invalidSearch: true,
+			});
+		}
+
 		const selectedCategory = rawCategory?.trim() || undefined;
+		const searchQuery =
+			rawQuery?.trim().slice(0, MAX_QUERY_LENGTH) || undefined;
 
 		try {
 			const allProducts = await productService.getAll();
 			const categories = getCategories(allProducts);
-			const products = selectedCategory
+			const inCategory = selectedCategory
 				? filterByCategory(allProducts, selectedCategory)
 				: allProducts;
+			const products = searchQuery
+				? searchProducts(inCategory, searchQuery)
+				: inCategory;
 
 			return res.render("shop", {
 				title,
 				products,
 				categories,
 				selectedCategory,
+				searchQuery,
+				productNames: allProducts.map((product) => product.name),
 			});
 		} catch (error) {
 			console.error("Failed to load products", error);
@@ -139,9 +161,21 @@ export function createApp(
 	});
 
 	app.post("/registration", async (req: Request, res: Response) => {
-		const { name, email, password, confirmPassword } = req.body ?? {};
+		const { name, email, password, confirmPassword, safeWordHint, safeWord } =
+			req.body ?? {};
 		const trimmedName = typeof name === "string" ? name.trim() : "";
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
+		const selectedHint =
+			typeof safeWordHint === "string" &&
+			[
+				"mothers-maiden-name",
+				"favourite-movie",
+				"first-pet",
+				"childhood-friend",
+				"holiday",
+			].includes(safeWordHint)
+				? safeWordHint
+				: "";
 
 		if (
 			!trimmedName ||
@@ -158,6 +192,7 @@ export function createApp(
 					"Please provide a name, valid email address, password, and password confirmation.",
 				name: trimmedName,
 				email: trimmedEmail,
+				safeWordHint: selectedHint,
 			});
 		}
 
@@ -168,6 +203,19 @@ export function createApp(
 				registrationMessage: "Your passwords do not match.",
 				name: trimmedName,
 				email: trimmedEmail,
+				safeWordHint: selectedHint,
+			});
+		}
+
+		if (!selectedHint || typeof safeWord !== "string" || !safeWord.trim()) {
+			return res.status(400).render("registration", {
+				title: "Register | Cue Corner",
+				registrationError: true,
+				registrationMessage:
+					"Please choose a safe word hint and enter a safe word.",
+				name: trimmedName,
+				email: trimmedEmail,
+				safeWordHint: selectedHint,
 			});
 		}
 
@@ -181,6 +229,8 @@ export function createApp(
 						name: trimmedName,
 						email: trimmedEmail,
 						password,
+						safeWordHint: selectedHint,
+						safeWord,
 					}),
 				},
 			);
@@ -196,6 +246,7 @@ export function createApp(
 						"The registration service could not complete your request. Please try again.",
 					name: trimmedName,
 					email: trimmedEmail,
+					safeWordHint: selectedHint,
 				});
 			}
 		} catch (error) {
@@ -207,6 +258,7 @@ export function createApp(
 					"The registration service is unavailable. Please try again.",
 				name: trimmedName,
 				email: trimmedEmail,
+				safeWordHint: selectedHint,
 			});
 		}
 

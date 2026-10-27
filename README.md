@@ -63,6 +63,7 @@ On success, the frontend regenerates the session ID, stores the access token, us
 Sessions currently use Express's in-memory development store: restarting the frontend signs everyone out, and this store is not suitable for production or multiple instances. Before production deployment, configure a shared production session store in [src/auth.ts](src/auth.ts), set a strong `SESSION_SECRET`, and serve HTTPS (production cookies are Secure). If TLS terminates at a reverse proxy, configure Express `trust proxy` for that trusted proxy so secure cookies can be issued.
 
 Signing in changes the frontend session only. Existing backend routes remain public until backend JWT verification is implemented. Future protected server-to-server requests must send `Authorization: Bearer <accessToken>`.
+Registration sends `name`, `email`, `password`, `safeWordHint`, and `safeWord` as JSON to `POST /api/register`. The backend must validate the hint and securely hash and store the safe word. The current backend registration DTO and service only handle name, email, and password, so backend support is still required for the safe-word feature to work end to end.
 
 Use `npm ci` rather than `npm install`. It installs the exact versions recorded in `package-lock.json`, so everyone on the team runs identical dependencies. Use `npm install` only when you are deliberately adding or upgrading a package.
 
