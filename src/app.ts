@@ -179,7 +179,7 @@ export function createApp(
 
 		if (
 			!trimmedName ||
-			!/^[^\s@]+@[^\s@]+$/.test(trimmedEmail) ||
+			!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail) ||
 			typeof password !== "string" ||
 			!password ||
 			typeof confirmPassword !== "string" ||
@@ -190,6 +190,18 @@ export function createApp(
 				registrationError: true,
 				registrationMessage:
 					"Please provide a name, valid email address, password, and password confirmation.",
+				name: trimmedName,
+				email: trimmedEmail,
+				safeWordHint: selectedHint,
+			});
+		}
+
+		if (password.length < 12 || password.length > 128) {
+			return res.status(400).render("registration", {
+				title: "Register | Cue Corner",
+				registrationError: true,
+				registrationMessage:
+					"Your password must be between 12 and 128 characters long.",
 				name: trimmedName,
 				email: trimmedEmail,
 				safeWordHint: selectedHint,

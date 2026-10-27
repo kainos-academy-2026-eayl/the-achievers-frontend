@@ -23,12 +23,13 @@
 
       <div class="auth-field">
         <label for="registration-password">Password</label>
-        <input id="registration-password" name="password" type="password" autocomplete="new-password" required>
+        <input id="registration-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="password-hint" required>
+        <p class="auth-hint" id="password-hint">Must be at least 12 characters.</p>
       </div>
 
       <div class="auth-field">
         <label for="registration-confirm-password">Confirm password</label>
-        <input id="registration-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required>
+        <input id="registration-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
       </div>
 
       <div class="auth-field">

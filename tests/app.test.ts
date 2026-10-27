@@ -110,6 +110,27 @@ describe('POST /registration', () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
+    it.each(['short-pass', 'x'.repeat(129)])('rejects passwords outside 12-128 characters', async (password) => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+        const app = createApp();
+
+        const response = await request(app)
+            .post('/registration')
+            .type('form')
+            .send({
+                name: 'Cue User',
+                email: 'cue-user@example.com',
+                password,
+                confirmPassword: password,
+                safeWordHint: 'first-pet',
+                safeWord: 'private-safe-word',
+            });
+
+        expect(response.status).toBe(400);
+        expect(response.text).toContain('Your password must be between 12 and 128 characters long.');
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it('rejects passwords that do not match', async () => {
         const fetchSpy = vi.spyOn(globalThis, 'fetch');
         const app = createApp();
