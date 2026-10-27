@@ -1,0 +1,67 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/auth.css">
+  <link rel="stylesheet" href="/css/profile.css">
+{% endblock %}
+
+{% macro field(id, label, type="text", autocomplete="off", required=false, maxlength=100, hint="") %}
+  {% set error = fieldErrors[id] if fieldErrors else "" %}
+  <div class="auth-field{{ ' has-error' if error }}">
+    <label for="profile-{{ id }}">{{ label }}{% if not required %} <span class="optional">(optional)</span>{% endif %}</label>
+    {% if hint %}<p class="auth-hint" id="profile-{{ id }}-hint">{{ hint }}</p>{% endif %}
+    {% if error %}<p class="field-error" id="profile-{{ id }}-error">{{ error }}</p>{% endif %}
+    <input id="profile-{{ id }}" name="{{ id }}" type="{{ type }}" autocomplete="{{ autocomplete }}" maxlength="{{ maxlength }}"
+      {% if type != "password" %}value="{{ profile[id] | default('') }}"{% endif %}
+      {% if required %}required{% endif %}
+      {% if error %}aria-invalid="true"{% endif %}
+      {% if error or hint %}aria-describedby="{{ 'profile-' + id + '-hint' if hint }} {{ 'profile-' + id + '-error' if error }}"{% endif %}>
+  </div>
+{% endmacro %}
+
+{% block content %}
+  <section class="auth-page" aria-labelledby="profile-title">
+  <div class="auth-card profile-card">
+    <h1 id="profile-title">My Profile</h1>
+
+    {% if notLoggedIn %}
+      <p class="auth-notice" role="alert">Please log in to view your profile.</p>
+      <a class="btn btn-green" href="/login">Log in</a>
+    {% elif loadError %}
+      <p class="auth-notice" role="alert">We can't load your profile right now. Please try again later.</p>
+      <a class="btn btn-gold" href="/profile">Try again</a>
+    {% else %}
+      {% if updated %}
+        <p class="profile-success" role="status">Your profile has been updated.</p>
+      {% endif %}
+      {% if formError %}
+        <p class="profile-error" role="alert">{{ formError }}</p>
+      {% endif %}
+
+      <form class="auth-form" action="/profile" method="post" novalidate>
+        <fieldset>
+          <legend>Personal details</legend>
+          {{ field("name", "Name", autocomplete="name", required=true) }}
+          {{ field("email", "Email", type="email", autocomplete="email", required=true, maxlength=254) }}
+          {{ field("phone", "Phone number", type="tel", autocomplete="tel", maxlength=20, hint="UK number, for example 07123 456789") }}
+        </fieldset>
+
+        <fieldset>
+          <legend>Delivery address</legend>
+          {{ field("addressLine1", "Address line 1", autocomplete="address-line1") }}
+          {{ field("addressLine2", "Address line 2", autocomplete="address-line2") }}
+          {{ field("city", "Town or city", autocomplete="address-level2", maxlength=60) }}
+          {{ field("postcode", "Postcode", autocomplete="postal-code", maxlength=10) }}
+        </fieldset>
+
+        <fieldset>
+          <legend>Confirm changes</legend>
+          {{ field("currentPassword", "Current password", type="password", autocomplete="current-password", required=true, maxlength=128, hint="Enter your current password to save any changes.") }}
+        </fieldset>
+
+        <button class="btn btn-green" type="submit">Save changes</button>
+      </form>
+    {% endif %}
+  </div>
+  </section>
+{% endblock %}
