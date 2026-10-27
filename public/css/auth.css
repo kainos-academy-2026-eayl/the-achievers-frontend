@@ -42,10 +42,26 @@
     min-width: 0;
 }
 
+.auth-errors {
+    margin: -1rem 0 1.75rem;
+    padding-left: 1.25rem;
+    list-style: disc;
+    color: #a12622;
+    font-size: 0.9rem;
+}
+
 .auth-hint {
     margin: 0;
     color: var(--grey-600);
     font-size: 0.85rem;
+}
+
+.password-count {
+    font-weight: 600;
+}
+
+.password-count.is-valid {
+    color: var(--green-700);
 }
 
 .auth-field label {
