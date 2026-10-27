@@ -1,5 +1,6 @@
 import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
+import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
 import { ProductClient } from "./clients/productClient";
 import {
@@ -17,10 +18,18 @@ import {
 
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
-		new ProductClient(process.env.BACKEND_URL ?? "http://localhost:3000"),
+		new ProductClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
 	),
 	cartService: CartOperations = new CartService(
-		new CartClient(process.env.BACKEND_URL ?? "http://localhost:3000"),
+		new CartClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
 	),
 ): Express {
 	const app = express();
@@ -58,6 +67,13 @@ export function createApp(
 		}
 		next();
 	});
+
+	registerAuth(
+		app,
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+	);
 
 	app.use("/cart", createCartRouter(cartService));
 
@@ -136,10 +152,6 @@ export function createApp(
 		}
 	});
 
-	app.get("/login", (_req: Request, res: Response) => {
-		res.render("login", { title: "Login | Cue Corner" });
-	});
-
 	app.get("/reset-pass", (_req: Request, res: Response) => {
 		res.render("reset-pass", { title: "Reset Password | Cue Corner" });
 	});
@@ -199,7 +211,8 @@ export function createApp(
 			return res.status(400).render("registration", {
 				title: "Register | Cue Corner",
 				registrationError: true,
-				registrationMessage: "Please choose a safe word hint and enter a safe word.",
+				registrationMessage:
+					"Please choose a safe word hint and enter a safe word.",
 				name: trimmedName,
 				email: trimmedEmail,
 				safeWordHint: selectedHint,
@@ -208,7 +221,7 @@ export function createApp(
 
 		try {
 			const backendResponse = await fetch(
-				`${process.env.BACKEND_URL ?? "http://localhost:3000"}/api/register`,
+				`${process.env.API_BASE_URL ?? process.env.BACKEND_URL ?? "http://localhost:3000"}/api/register`,
 				{
 					method: "POST",
 					headers: { "Content-Type": "application/json" },

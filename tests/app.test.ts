@@ -1,19 +1,60 @@
 import { randomUUID } from 'node:crypto';
 import request from 'supertest';
-import { afterEach, describe, expect, it, vi } from 'vitest';
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { createApp } from '../src/app';
 
+const backendUrl = process.env.AUTH_INTEGRATION_BACKEND_URL;
+
 describe('POST /registration', () => {
+    beforeEach(() => {
+        vi.stubEnv('API_BASE_URL', 'http://localhost:3000');
+    });
+
     afterEach(() => {
         vi.restoreAllMocks();
         vi.unstubAllEnvs();
     });
 
     it('forwards registration details and confirms receipt', async () => {
-        vi.stubEnv('BACKEND_URL', undefined);
         const fetchSpy = vi.spyOn(globalThis, 'fetch').mockResolvedValue(
-            new Response(null, { status: 201 }),
+            new Response(JSON.stringify({ name: 'Cue User', email: 'cue-user@example.com' }), {
+                status: 201,
+                headers: { 'Content-Type': 'application/json' },
+            }),
         );
+
+        const response = await request(createApp())
+            .post('/registration')
+            .type('form')
+            .send({
+                name: 'Cue User',
+                email: 'cue-user@example.com',
+                password: 'secure-password',
+                confirmPassword: 'secure-password',
+                safeWordHint: 'first-pet',
+                safeWord: 'private-safe-word',
+            });
+
+        expect(fetchSpy).toHaveBeenCalledExactlyOnceWith('http://localhost:3000/api/register', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({
+                name: 'Cue User',
+                email: 'cue-user@example.com',
+                password: 'secure-password',
+                safeWordHint: 'first-pet',
+                safeWord: 'private-safe-word',
+            }),
+        });
+        expect(response.status).toBe(202);
+        expect(response.text).toContain('Your registration details were received.');
+        expect(response.text).not.toContain('secure-password');
+        expect(response.text).not.toContain('private-safe-word');
+    });
+
+    it.skipIf(!backendUrl)('creates a user through the real backend', async () => {
+        vi.stubEnv('API_BASE_URL', backendUrl!);
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
         const app = createApp();
         const email = `registration-test-${randomUUID()}@example.com`;
 
@@ -34,11 +75,18 @@ describe('POST /registration', () => {
         expect(response.text).toContain('Your registration details were received.');
         expect(response.text).not.toContain('secure-password');
         expect(response.text).not.toContain('private-safe-word');
-        expect(fetchSpy).toHaveBeenCalledWith('http://localhost:3000/api/register', {
+        expect(fetchSpy).toHaveBeenCalledWith(`${backendUrl}/api/register`, {
             method: 'POST',
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify({ name: 'Cue User', email, password: 'secure-password', safeWordHint: 'first-pet', safeWord: 'private-safe-word' }),
         });
+        const backendResponse = await fetchSpy.mock.results[0]!.value;
+        expect(backendResponse.status, 'The real backend must create the user').toBe(201);
+        expect(await backendResponse.json()).toMatchObject({ name: 'Cue User', email });
+        expect(response.status).toBe(202);
+        expect(response.text).toContain('Your registration details were received.');
+        expect(response.text).not.toContain('secure-password');
+        expect(response.text).not.toContain('private-safe-word');
     }, 15_000);
 
     it('rejects incomplete registration details', async () => {
@@ -108,7 +156,7 @@ describe('POST /registration', () => {
     });
 
     it.each(['rejected', 'unavailable'])('preserves the hint when the backend is %s', async (failure) => {
-        vi.stubEnv('BACKEND_URL', 'http://localhost:4567');
+        vi.stubEnv('API_BASE_URL', 'http://localhost:4567');
         const fetchSpy = vi.spyOn(globalThis, 'fetch');
         if (failure === 'rejected') {
             fetchSpy.mockResolvedValue(new Response(null, { status: 500 }));
