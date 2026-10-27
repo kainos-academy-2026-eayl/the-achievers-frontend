@@ -15,8 +15,6 @@ import {
 	getCategories,
 	ProductService,
 } from "./services/productService";
-import { parseShippingDestination } from "./models/shippingDestination";
-
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
@@ -54,10 +52,7 @@ export function createApp(
 	);
 
 	app.use(async (req, res, next) => {
-		const destination = parseShippingDestination(
-			req.query.country,
-			req.query.postcode,
-		);
+		const destination = req.session.shippingDestination;
 		res.locals.shippingDestination = destination;
 		if (
 			req.method !== "GET" ||

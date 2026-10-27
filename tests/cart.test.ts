@@ -19,10 +19,10 @@ const destination: ShippingDestination = {
 	country: "GB",
 	postcode: "SW1A 1AA",
 };
-const cartPath = `/cart?country=GB&postcode=${encodeURIComponent(destination.postcode)}`;
+const cartPath = "/cart";
 
 function cartAction(fields: Record<string, string>) {
-	return { ...fields, ...destination };
+	return fields;
 }
 
 async function provideAddress(customer: SuperAgentTest): Promise<void> {
@@ -37,7 +37,7 @@ async function provideAddress(customer: SuperAgentTest): Promise<void> {
 		});
 	expect(response.status).toBe(303);
 	expect(response.headers.location).toBe(
-		"/cart?country=GB&postcode=SW1A+1AA&notice=address-saved",
+		"/cart?notice=address-saved",
 	);
 }
 
@@ -188,7 +188,7 @@ describe("Shopping cart journeys", () => {
 				}),
 			)
 			.expect(303)
-			.expect("Location", "/cart?country=GB&postcode=SW1A+1AA&notice=added");
+			.expect("Location", "/cart?notice=added");
 		await customer
 			.post("/cart/items/add")
 			.type("form")
@@ -223,7 +223,7 @@ describe("Shopping cart journeys", () => {
 				}),
 			)
 			.expect(303);
-		const updated = await customer.get(`${cartPath}&notice=updated`);
+		const updated = await customer.get(`${cartPath}?notice=updated`);
 		expect(updated.text).toContain("Quantity updated.");
 		expect(updated.text).toContain("£90.29");
 		expect(updated.text).toContain("Cart, 4 items");
@@ -292,12 +292,13 @@ describe("Shopping cart journeys", () => {
 			.type("form")
 			.send(cartAction({ productId: cue.id, quantity: "2" }));
 		for (const path of ["/", "/shop"]) {
-			const page = await customer.get(`${path}?country=GB&postcode=SW1A%201AA`);
+			const page = await customer.get(path);
 			expect(page.status).toBe(200);
 			expect(page.text).toContain('action="/cart/items/add"');
 			expect(page.text).toContain(`name="productId" value="${cue.id}"`);
 			expect(page.text).toContain("Cart, 2 items");
 			expect(page.text).toContain("£89.99");
+			expect(page.text).not.toContain(destination.postcode);
 		}
 	});
 
@@ -404,7 +405,7 @@ describe("Shopping cart journeys", () => {
 		await customer.get(cartPath);
 		vi.spyOn(console, "error").mockImplementation(() => {});
 		client.get.mockRejectedValue(new Error("offline"));
-		const response = await customer.get("/?country=GB&postcode=SW1A%201AA");
+		const response = await customer.get("/");
 		expect(response.status).toBe(200);
 		expect(response.text).toContain("item count unavailable");
 		expect(response.text).not.toContain("Cart, 0 items");

@@ -7,8 +7,7 @@ import { CartService } from "../src/services/cartService";
 import { ProductService } from "../src/services/productService";
 
 const backendUrl = process.env.CART_INTEGRATION_BACKEND_URL;
-const destinationFields = { country: "GB", postcode: "SW1A 1AA" };
-const cartPath = "/cart?country=GB&postcode=SW1A%201AA";
+const cartPath = "/cart";
 
 describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 	it("renders catalogue products, persists a browser cart, updates totals and removes items", async () => {
@@ -40,7 +39,7 @@ describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 					postcode: "SW1A 1AA",
 				})
 				.expect(303);
-			const shop = await customer.get("/shop?country=GB&postcode=SW1A%201AA");
+			const shop = await customer.get("/shop");
 			expect(shop.status).toBe(200);
 			expect(shop.text).toContain(`name="productId" value="${cueId}"`);
 			expect(shop.text).toContain(`name="productId" value="${caseId}"`);
@@ -49,13 +48,13 @@ describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 				await customer
 					.post("/cart/items/add")
 					.type("form")
-					.send({ ...destinationFields, productId, quantity: "1" })
+					.send({ productId, quantity: "1" })
 					.expect(303);
 			}
 			await customer
 				.post("/cart/items/add")
 				.type("form")
-				.send({ ...destinationFields, productId: cueId, quantity: "1" })
+				.send({ productId: cueId, quantity: "1" })
 				.expect(303);
 
 			const cart = await customer.get(cartPath);
@@ -88,12 +87,12 @@ describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 			await otherCustomer
 				.post("/cart/items/update")
 				.type("form")
-				.send({ ...destinationFields, productId: cueId, quantity: "9" })
+				.send({ productId: cueId, quantity: "9" })
 				.expect(404);
 			await otherCustomer
 				.post("/cart/items/remove")
 				.type("form")
-				.send({ ...destinationFields, productId: cueId })
+				.send({ productId: cueId })
 				.expect(303);
 
 			const unchanged = await customer.get(cartPath);
@@ -102,7 +101,7 @@ describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 			await customer
 				.post("/cart/items/update")
 				.type("form")
-				.send({ ...destinationFields, productId: cueId, quantity: "3" })
+				.send({ productId: cueId, quantity: "3" })
 				.expect(303);
 			const updated = await customer.get(cartPath);
 			expect(updated.status).toBe(200);
@@ -116,7 +115,7 @@ describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 
 			for (const path of ["/", "/shop"]) {
 				const page = await customer.get(
-					`${path}?country=GB&postcode=SW1A%201AA`,
+					path,
 				);
 				expect(page.status).toBe(200);
 				expect(page.text).toContain("Cart, 4 items");
@@ -125,7 +124,7 @@ describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 			await customer
 				.post("/cart/items/remove")
 				.type("form")
-				.send({ ...destinationFields, productId: cueId })
+				.send({ productId: cueId })
 				.expect(303);
 			const remaining = await customer.get(cartPath);
 			expect(remaining.text).not.toContain("Pro Series Maple Cue");
@@ -134,7 +133,7 @@ describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 			await customer
 				.post("/cart/items/remove")
 				.type("form")
-				.send({ ...destinationFields, productId: caseId })
+				.send({ productId: caseId })
 				.expect(303);
 			const removedLast = await customer.get(cartPath);
 			expect(removedLast.status).toBe(200);
@@ -145,7 +144,7 @@ describe.skipIf(!backendUrl)("real frontend/backend cart integration", () => {
 				await customer
 					.post("/cart/items/remove")
 					.type("form")
-					.send({ ...destinationFields, productId })
+					.send({ productId })
 					.expect(303);
 			}
 		}

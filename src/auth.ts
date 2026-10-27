@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { promisify } from "node:util";
 import type { Express, Response } from "express";
 import session from "express-session";
+import type { ShippingDestination } from "./models/shippingDestination";
 
 interface LoginUser {
 	email: string;
@@ -24,6 +25,7 @@ declare module "express-session" {
 			expiresAt: number;
 			role: "admin" | "user";
 		};
+		shippingDestination?: ShippingDestination;
 	}
 }
 
