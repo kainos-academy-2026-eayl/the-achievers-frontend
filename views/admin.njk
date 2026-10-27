@@ -1,0 +1,61 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/admin.css">
+{% endblock %}
+
+{% block content %}
+<div class="container admin-dashboard">
+  {% if notAllowed %}
+    <h1>Not allowed</h1>
+    <p>You need an admin account to view this dashboard.</p>
+    <a class="btn btn-green" href="/">Return home</a>
+  {% else %}
+    <header class="admin-heading">
+      <div>
+        <p class="admin-eyebrow">Cue Corner administration</p>
+        <h1>Admin dashboard</h1>
+        <p>Welcome, {{ currentUser.name }}. Here is your catalogue overview.</p>
+      </div>
+      <a class="btn btn-green" href="/shop">View shop</a>
+    </header>
+
+    <aside class="admin-notice" aria-labelledby="admin-availability">
+      <h2 id="admin-availability">Read-only overview</h2>
+      <p>This dashboard uses the public product catalogue. Product editing, order management and user management are not available yet because the backend has no admin endpoints.</p>
+    </aside>
+
+    {% if loadError %}
+      <div class="admin-notice" role="alert">
+        <h2>Catalogue unavailable</h2>
+        <p>We could not load the catalogue overview. Totals are unavailable.</p>
+        <a class="btn btn-green" href="/admin">Try again</a>
+      </div>
+    {% else %}
+      <dl class="admin-stats">
+        <div><dt>Products</dt><dd>{{ products | length }}</dd></div>
+        <div><dt>Categories</dt><dd>{{ categories | length }}</dd></div>
+      </dl>
+
+      <section aria-labelledby="catalogue-heading">
+        <h2 id="catalogue-heading">Product catalogue</h2>
+        {% if products | length %}
+          <div class="admin-table-scroll" role="region" aria-label="Product catalogue" tabindex="0">
+            <table class="admin-table">
+              <caption class="visually-hidden">Available products, categories and prices</caption>
+              <thead><tr><th scope="col">Product</th><th scope="col">Category</th><th scope="col">Price</th></tr></thead>
+              <tbody>
+                {% for product in products %}
+                  <tr><th scope="row">{{ product.name }}</th><td>{{ product.category }}</td><td>{{ product.price }}</td></tr>
+                {% endfor %}
+              </tbody>
+            </table>
+          </div>
+        {% else %}
+          <p>No products available. Products will appear here when they are added to the catalogue.</p>
+        {% endif %}
+      </section>
+    {% endif %}
+  {% endif %}
+</div>
+{% endblock %}
