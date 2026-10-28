@@ -3,11 +3,16 @@ import nunjucks from "nunjucks";
 import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
 import { ProductClient } from "./clients/productClient";
+import { ProfileClient } from "./clients/profileClient";
 import {
 	type CartOperations,
 	createCartRouter,
 	readCartId,
 } from "./controllers/cartController";
+import {
+	createProfileRouter,
+	type ProfileOperations,
+} from "./controllers/profileController";
 import { CartService } from "./services/cartService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
@@ -31,6 +36,11 @@ export function createApp(
 				process.env.BACKEND_URL ??
 				"http://localhost:3000",
 		),
+	),
+	profileService: ProfileOperations = new ProfileClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	),
 ): Express {
 	const app = express();
@@ -61,7 +71,14 @@ export function createApp(
 		res.locals.shippingDestination = destination;
 		if (
 			req.method !== "GET" ||
-			!["/", "/shop", "/registration", "/reset-pass"].includes(req.path)
+			![
+				"/",
+				"/shop",
+				"/login",
+				"/registration",
+				"/reset-pass",
+				"/profile",
+			].includes(req.path)
 		) {
 			next();
 			return;
@@ -87,6 +104,7 @@ export function createApp(
 	});
 
 	app.use("/cart", createCartRouter(cartService));
+	app.use("/profile", createProfileRouter(profileService));
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
