@@ -127,6 +127,12 @@
     font-size: 1.1rem;
 }
 
+.cart-estimated-total {
+    border-top: 1px solid #dfe5e2;
+    padding-top: 0.75rem;
+    font-weight: 700;
+}
+
 .cart-summary p {
     color: var(--grey-600);
     font-size: 0.9rem;
@@ -156,6 +162,35 @@
 .cart-empty {
     padding: 3rem 1.5rem;
     text-align: center;
+}
+
+.cart-address {
+    max-width: 38rem;
+    padding: 1.5rem;
+    background: var(--white);
+    border: 1px solid #dfe5e2;
+    border-radius: var(--radius);
+}
+
+.cart-address h2 {
+    margin-top: 0;
+}
+
+.cart-address-form {
+    display: grid;
+    gap: 0.6rem;
+}
+
+.cart-address-form input {
+    width: 100%;
+    padding: 0.6rem;
+    border: 1px solid var(--grey-600);
+    border-radius: 5px;
+    font: inherit;
+}
+
+.cart-address-form button {
+    margin-top: 0.75rem;
 }
 
 .cart-empty h2 {

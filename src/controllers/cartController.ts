@@ -1,6 +1,10 @@
 import { randomUUID } from "node:crypto";
 import { Router, type Request, type Response } from "express";
 import { CartApiError } from "../clients/cartClient";
+import {
+	parseShippingDestination,
+	type ShippingDestination,
+} from "../models/shippingDestination";
 import type { CartService } from "../services/cartService";
 
 export type CartOperations = Pick<
@@ -41,20 +45,37 @@ function ensureCartId(req: Request, res: Response): string {
 export function createCartRouter(service: CartOperations): Router {
 	const router = Router();
 
+	function renderAddressForm(
+		res: Response,
+		status = 200,
+		cartError?: string,
+	): void {
+		res.set("Cache-Control", "no-store");
+		res.status(status).render("cart", {
+			title: "Shopping Cart | Cue Corner",
+			cartCount: "?",
+			addressRequired: true,
+			cartError,
+			maxCartQuantity: MAX_CART_QUANTITY,
+		});
+	}
+
 	async function renderCart(
 		res: Response,
 		cartId: string,
+		destination: ShippingDestination,
 		status = 200,
 		cartError?: string,
 		cartMessage?: string,
 	): Promise<void> {
 		res.set("Cache-Control", "no-store");
 		try {
-			const cart = await service.get(cartId);
+			const cart = await service.get(cartId, destination);
 			res.status(status).render("cart", {
 				title: "Shopping Cart | Cue Corner",
 				cart,
 				cartCount: cart.count,
+				shippingDestination: destination,
 				cartError,
 				cartMessage,
 				maxCartQuantity: MAX_CART_QUANTITY,
@@ -72,6 +93,7 @@ export function createCartRouter(service: CartOperations): Router {
 
 	router.get("/", async (req, res) => {
 		const messages: Record<string, string> = {
+			"address-saved": "Delivery postcode confirmed.",
 			added: "Product added to your cart.",
 			updated: "Quantity updated.",
 			removed: "Product removed from your cart.",
@@ -80,13 +102,81 @@ export function createCartRouter(service: CartOperations): Router {
 			typeof req.query.notice === "string"
 				? messages[req.query.notice]
 				: undefined;
-		await renderCart(res, ensureCartId(req, res), 200, undefined, message);
+		const cartId = ensureCartId(req, res);
+		const destination = parseShippingDestination(
+			req.query.country,
+			req.query.postcode,
+		);
+		if (!destination) {
+			renderAddressForm(
+				res,
+				200,
+				req.query.country !== undefined || req.query.postcode !== undefined
+					? "Enter a valid UK postcode to continue."
+					: undefined,
+			);
+			return;
+		}
+		await renderCart(res, cartId, destination, 200, undefined, message);
+	});
+
+	router.post("/delivery-address", (req, res) => {
+		const body = req.body as Record<string, unknown> | undefined;
+		const fullName = body?.fullName;
+		const addressLine1 = body?.addressLine1;
+		const city = body?.city;
+		const postcode = body?.postcode;
+		const isValidAddress = (
+			value: unknown,
+			maxLength: number,
+		): value is string =>
+			typeof value === "string" &&
+			value.trim().length > 0 &&
+			value.trim().length <= maxLength;
+
+		if (
+			!isValidAddress(fullName, 200) ||
+			!isValidAddress(addressLine1, 200) ||
+			!isValidAddress(city, 100) ||
+			!isValidAddress(postcode, 10)
+		) {
+			renderAddressForm(
+				res,
+				400,
+				"Enter your name, street address, town or city, and UK postcode.",
+			);
+			return;
+		}
+
+		const destination = {
+			country: "GB" as const,
+			postcode: postcode.trim().toUpperCase(),
+		};
+		const query = new URLSearchParams({
+			country: destination.country,
+			postcode: destination.postcode,
+			notice: "address-saved",
+		});
+		res.redirect(303, `/cart?${query.toString()}`);
 	});
 
 	for (const action of ["add", "update", "remove"] as const) {
 		router.post(`/items/${action}`, async (req, res) => {
 			const cartId = ensureCartId(req, res);
-			const { productId, quantity: rawQuantity } = req.body ?? {};
+			const body = req.body as Record<string, unknown> | undefined;
+			const destination = parseShippingDestination(
+				body?.country,
+				body?.postcode,
+			);
+			if (!destination) {
+				renderAddressForm(
+					res,
+					400,
+					"Enter your UK delivery address before changing your cart.",
+				);
+				return;
+			}
+			const { productId, quantity: rawQuantity } = body ?? {};
 			const quantity =
 				typeof rawQuantity === "string" && /^[1-9]\d*$/.test(rawQuantity)
 					? Number(rawQuantity)
@@ -102,6 +192,7 @@ export function createCartRouter(service: CartOperations): Router {
 				await renderCart(
 					res,
 					cartId,
+					destination,
 					400,
 					`Choose a product and enter a whole-number quantity between 1 and ${MAX_CART_QUANTITY}.`,
 				);
@@ -110,12 +201,17 @@ export function createCartRouter(service: CartOperations): Router {
 
 			try {
 				if (action === "remove") {
-					await service.remove(cartId, productId);
+					await service.remove(cartId, productId, destination);
 				} else {
-					await service[action](cartId, productId, quantity);
+					await service[action](cartId, productId, quantity, destination);
 				}
 				const notices = { add: "added", update: "updated", remove: "removed" };
-				res.redirect(303, `/cart?notice=${notices[action]}`);
+				const query = new URLSearchParams({
+					country: destination.country,
+					postcode: destination.postcode,
+					notice: notices[action],
+				});
+				res.redirect(303, `/cart?${query.toString()}`);
 			} catch (error) {
 				console.error(`Failed to ${action} cart item`, error);
 				const rejected =
@@ -124,6 +220,7 @@ export function createCartRouter(service: CartOperations): Router {
 				await renderCart(
 					res,
 					cartId,
+					destination,
 					rejected ? error.status : 502,
 					rejected
 						? "This change could not be made. The product may be unavailable or the quantity may exceed the cart limit. Review your cart and try again."
