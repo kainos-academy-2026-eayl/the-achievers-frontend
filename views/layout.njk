@@ -53,6 +53,7 @@
             </a>
             {% if currentUser %}
               <span>Signed in as {{ currentUser.name }}</span>
+              <a class="header-btn" href="/profile">My profile</a>
               <form action="/logout" method="post">
                 <button class="header-btn" type="submit">Logout</button>
               </form>

@@ -3,11 +3,16 @@ import nunjucks from "nunjucks";
 import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
 import { ProductClient } from "./clients/productClient";
+import { ProfileClient } from "./clients/profileClient";
 import {
 	type CartOperations,
 	createCartRouter,
 	readCartId,
 } from "./controllers/cartController";
+import {
+	createProfileRouter,
+	type ProfileOperations,
+} from "./controllers/profileController";
 import { CartService } from "./services/cartService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
@@ -29,6 +34,11 @@ export function createApp(
 				process.env.BACKEND_URL ??
 				"http://localhost:3000",
 		),
+	),
+	profileService: ProfileOperations = new ProfileClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	),
 ): Express {
 	const app = express();
@@ -63,6 +73,7 @@ export function createApp(
 				"/registration",
 				"/reset-pass",
 				"/admin",
+				"/profile",
 			].includes(req.path)
 		) {
 			next();
@@ -89,6 +100,7 @@ export function createApp(
 	});
 
 	app.use("/cart", createCartRouter(cartService));
+	app.use("/profile", createProfileRouter(profileService));
 
 	app.get("/admin", async (req: Request, res: Response) => {
 		res.set("Cache-Control", "no-store");
