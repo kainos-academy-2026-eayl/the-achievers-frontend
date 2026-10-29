@@ -26,12 +26,25 @@ function setup() {
         return cart;
     }
     const client = {
-        get: vi.fn(async (id: string) => ({
-            items: [...items(id)].map(([productId, quantity]) => ({
-                product: productId === cue.id ? cue : chalk,
-                quantity,
-            })),
-        })),
+        get: vi.fn(async (id: string) => {
+            const cartItems = [...items(id)];
+            const subtotalPence = cartItems.reduce(
+                (subtotal, [productId, quantity]) =>
+                    subtotal +
+                    Math.round((productId === cue.id ? cue.price : chalk.price) * 100) *
+                    quantity,
+                0,
+            );
+            return {
+                items: cartItems.map(([productId, quantity]) => ({
+                    product: productId === cue.id ? cue : chalk,
+                    quantity,
+                })),
+                // Stands in for the backend's shipping rule: £4.99, free over £50.
+                estimatedShippingCost:
+                    cartItems.length === 0 || subtotalPence > 5_000 ? 0 : 4.99,
+            };
+        }),
         add: vi.fn(async (id: string, productId: string, quantity: number) => {
             const cart = items(id);
             cart.set(productId, (cart.get(productId) ?? 0) + quantity);
@@ -283,6 +296,7 @@ describe("Shopping cart journeys", () => {
         const app = createApp(
             undefined,
             serviceWith({
+                estimatedShippingCost: 4.99,
                 items: [
                     {
                         product: { ...cue, name: "<script>alert(1)</script>" },
@@ -309,31 +323,35 @@ describe("Shopping cart journeys", () => {
     });
 });
 
-describe("Shipping calculation", () => {
-    function cartWith(price: number) {
-        return { items: [{ product: { ...cue, price }, quantity: 1 }] };
+describe("Shipping from the backend", () => {
+    function cartWith(estimatedShippingCost: unknown) {
+        return {
+            items: [{ product: { ...cue, price: 10 }, quantity: 1 }],
+            estimatedShippingCost,
+        };
     }
 
     it.each([
-        [0.01, "£4.99", "£5.00"],
-        [49.99, "£4.99", "£54.98"],
-        [50, "£4.99", "£54.99"],
-        [50.01, "Free", "£50.01"],
-        [120, "Free", "£120.00"],
+        [4.99, "£4.99", "£14.99"],
+        [0, "Free", "£10.00"],
+        [7.5, "£7.50", "£17.50"],
     ])(
-        "for a subtotal of %s charges %s shipping for a total of %s",
-        async (price, shipping, grandTotal) => {
-            const cart = await serviceWith(cartWith(price)).get(randomUUID());
+        "displays the backend shipping cost %s as %s with a total of %s",
+        async (shippingCost, shipping, grandTotal) => {
+            const cart = await serviceWith(cartWith(shippingCost)).get(randomUUID());
             expect(cart.shipping).toBe(shipping);
             expect(cart.grandTotal).toBe(grandTotal);
         },
     );
 
-    it("charges no shipping on an empty cart", async () => {
-        const cart = await serviceWith({ items: [] }).get(randomUUID());
-        expect(cart.shipping).toBe("Free");
-        expect(cart.grandTotal).toBe("£0.00");
-    });
+    it.each([undefined, null, "4.99", -0.01, 1.005, Number.MAX_SAFE_INTEGER])(
+        "rejects invalid backend shipping cost %#",
+        async (shippingCost) => {
+            await expect(
+                serviceWith(cartWith(shippingCost)).get(randomUUID()),
+            ).rejects.toThrow();
+        },
+    );
 });
 
 describe("Cart response validation", () => {
@@ -355,7 +373,11 @@ describe("Cart response validation", () => {
             ],
         },
     ])("rejects malformed or unsafe cart data %#", async (data) => {
-        await expect(serviceWith(data).get(randomUUID())).rejects.toThrow();
+        await expect(
+            serviceWith(data && { estimatedShippingCost: 4.99, ...data }).get(
+                randomUUID(),
+            ),
+        ).rejects.toThrow();
     });
 });
 
@@ -363,11 +385,16 @@ describe("Cart backend HTTP contract", () => {
     it("uses the agreed methods, paths, identity header, bodies and a five-second deadline", async () => {
         const fetchSpy = vi
             .spyOn(globalThis, "fetch")
-            .mockResolvedValueOnce(new Response(JSON.stringify({ items: [] })))
+            .mockResolvedValueOnce(
+                new Response(JSON.stringify({ items: [], estimatedShippingCost: 0 })),
+            )
             .mockResolvedValue(new Response(null, { status: 204 }));
         const client = new CartClient("http://localhost:3000");
         const cartId = randomUUID();
-        expect(await client.get(cartId)).toEqual({ items: [] });
+        expect(await client.get(cartId)).toEqual({
+            items: [],
+            estimatedShippingCost: 0,
+        });
         await client.add(cartId, "cue/1", 2);
         await client.update(cartId, "cue/1", 3);
         await client.remove(cartId, "cue/1");

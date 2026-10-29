@@ -1,9 +1,6 @@
 import type { CartClient } from "../clients/cartClient";
 import type { CartItemViewModel, CartViewModel } from "../models/cartViewModel";
 
-const STANDARD_SHIPPING_PENCE = 499;
-const FREE_SHIPPING_THRESHOLD_PENCE = 5000;
-
 const currency = new Intl.NumberFormat("en-GB", {
 	style: "currency",
 	currency: "GBP",
@@ -73,10 +70,23 @@ export class CartService {
 			};
 		});
 
-		const shippingPence =
-			items.length === 0 || totalPence > FREE_SHIPPING_THRESHOLD_PENCE
-				? 0
-				: STANDARD_SHIPPING_PENCE;
+		const { estimatedShippingCost } = data;
+		if (
+			typeof estimatedShippingCost !== "number" ||
+			!Number.isFinite(estimatedShippingCost) ||
+			estimatedShippingCost < 0
+		) {
+			throw new Error("Invalid cart shipping estimate");
+		}
+		const shippingPence = Math.round(estimatedShippingCost * 100);
+		if (
+			Math.abs(estimatedShippingCost * 100 - shippingPence) > 0.000001 ||
+			!Number.isSafeInteger(shippingPence)
+		) {
+			throw new Error(
+				"Cart shipping estimate exceeds supported precision or range",
+			);
+		}
 		const grandTotalPence = totalPence + shippingPence;
 		if (!Number.isSafeInteger(grandTotalPence)) {
 			throw new Error("Cart total exceeds supported precision or range");
