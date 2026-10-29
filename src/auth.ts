@@ -29,7 +29,7 @@ declare module "express-session" {
 	}
 }
 
-function readLoginClaims(token: string): {
+export function readLoginClaims(token: string): {
 	role: "admin" | "user";
 	expiresAt: number;
 } {

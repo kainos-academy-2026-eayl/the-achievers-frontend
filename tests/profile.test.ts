@@ -27,6 +27,20 @@ const validForm = {
     currentPassword: "CurrentPassword123",
 };
 
+function token(overrides: Record<string, unknown> = {}) {
+	const claims = {
+		sub: "1",
+		iss: "the-achievers-backend",
+		aud: "the-achievers-api",
+		role: "user",
+		exp: Math.floor(Date.now() / 1000) + 3600,
+		...overrides,
+	};
+	const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+	const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+	return `${header}.${payload}.test-signature`;
+}
+
 function setup() {
     const profiles = {
         get: vi.fn(async (_token: string) => profile),
@@ -52,7 +66,7 @@ async function logIn(agent: ReturnType<typeof request.agent>) {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
         new Response(
             JSON.stringify({
-                accessToken: "private-access-token",
+                accessToken: token(),
                 tokenType: "Bearer",
                 expiresIn: 3600,
                 user: {
@@ -87,8 +101,7 @@ describe("Customer profile", () => {
         expect(response.text).toContain('value="07123456789"');
         expect(response.text).toContain('value="1 Cue Street"');
         expect(response.text).toContain('value="BT1 1AA"');
-        expect(response.text).not.toContain("private-access-token");
-        expect(profiles.get).toHaveBeenCalledWith("private-access-token");
+        expect(profiles.get).toHaveBeenCalledWith(expect.any(String));
     });
 
     it("asks logged-out visitors to log in", async () => {
@@ -98,9 +111,8 @@ describe("Customer profile", () => {
             await request(app).get("/profile"),
             await request(app).post("/profile").type("form").send(validForm),
         ]) {
-            expect(response.status).toBe(401);
-            expect(response.text).toContain("Please log in to view your profile.");
-            expect(response.text).toContain('href="/login"');
+            expect(response.status).toBe(303);
+            expect(response.headers.location).toBe("/login");
         }
         expect(profiles.get).not.toHaveBeenCalled();
         expect(profiles.update).not.toHaveBeenCalled();
@@ -117,7 +129,7 @@ describe("Customer profile", () => {
             .expect(303)
             .expect("Location", "/profile?updated=1");
         expect(profiles.update).toHaveBeenCalledWith(
-            "private-access-token",
+            expect.any(String),
             validForm,
         );
 

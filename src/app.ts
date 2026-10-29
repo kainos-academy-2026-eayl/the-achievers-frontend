@@ -13,6 +13,7 @@ import {
 	createProfileRouter,
 	type ProfileOperations,
 } from "./controllers/profileController";
+import { requireAdmin, requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
@@ -100,17 +101,11 @@ export function createApp(
 	});
 
 	app.use("/cart", createCartRouter(cartService));
-	app.use("/profile", createProfileRouter(profileService));
+	app.use("/profile", requireAuth, createProfileRouter(profileService));
 
-	app.get("/admin", async (req: Request, res: Response) => {
+	app.get("/admin", requireAdmin, async (_req: Request, res: Response) => {
 		res.set("Cache-Control", "no-store");
-		if (!req.session.auth) {
-			return res.redirect(303, "/login");
-		}
 		const title = "Admin dashboard | Cue Corner";
-		if (req.session.auth.role !== "admin") {
-			return res.status(403).render("admin", { title, notAllowed: true });
-		}
 		try {
 			const products = await productService.getAll();
 			return res.render("admin", {
