@@ -12,11 +12,21 @@
     {% if hint %}<p class="auth-hint" id="profile-{{ id }}-hint">{{ hint }}</p>{% endif %}
     {% if error %}<p class="field-error" id="profile-{{ id }}-error">{{ error }}</p>{% endif %}
     <input id="profile-{{ id }}" name="{{ id }}" type="{{ type }}" autocomplete="{{ autocomplete }}" maxlength="{{ maxlength }}"
-      {% if type != "password" %}value="{{ profile[id] | default('') }}"{% endif %}
+      {% if type != "password" %}value="{{ values[id] | default('') }}"{% endif %}
       {% if required %}required{% endif %}
       {% if error %}aria-invalid="true"{% endif %}
       {% if error or hint %}aria-describedby="{{ 'profile-' + id + '-hint' if hint }} {{ 'profile-' + id + '-error' if error }}"{% endif %}>
   </div>
+{% endmacro %}
+
+{% macro addressFields(slot, section, withLabel=false) %}
+  {% if withLabel %}
+    {{ field(slot + "-label", "Address name", maxlength=40, hint="For example Work or Mum's house") }}
+  {% endif %}
+  {{ field(slot + "-addressLine1", "Address line 1", autocomplete=section + " address-line1") }}
+  {{ field(slot + "-addressLine2", "Address line 2", autocomplete=section + " address-line2") }}
+  {{ field(slot + "-city", "Town or city", autocomplete=section + " address-level2", maxlength=60) }}
+  {{ field(slot + "-postcode", "Postcode", autocomplete=section + " postal-code", maxlength=10) }}
 {% endmacro %}
 
 {% block content %}
@@ -47,11 +57,23 @@
         </fieldset>
 
         <fieldset>
-          <legend>Delivery address</legend>
-          {{ field("addressLine1", "Address line 1", autocomplete="address-line1") }}
-          {{ field("addressLine2", "Address line 2", autocomplete="address-line2") }}
-          {{ field("city", "Town or city", autocomplete="address-level2", maxlength=60) }}
-          {{ field("postcode", "Postcode", autocomplete="postal-code", maxlength=10) }}
+          <legend>Home address</legend>
+          <p class="auth-hint">You can save up to 3 addresses. Add your home address first.</p>
+          {{ addressFields("home", "section-home") }}
+        </fieldset>
+
+        {% if fieldErrors and fieldErrors.otherAddresses %}
+          <p class="field-error" role="alert">{{ fieldErrors.otherAddresses }}</p>
+        {% endif %}
+
+        <fieldset>
+          <legend>Other address 1</legend>
+          {{ addressFields("other0", "section-other0", withLabel=true) }}
+        </fieldset>
+
+        <fieldset>
+          <legend>Other address 2</legend>
+          {{ addressFields("other1", "section-other1", withLabel=true) }}
         </fieldset>
 
         <fieldset>
