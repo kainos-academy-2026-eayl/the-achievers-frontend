@@ -120,6 +120,15 @@ describe("Customer profile", () => {
             /name="other0-addressLine1"[^>]*value="2 Office Park"/,
         );
         expect(response.text).toMatch(/name="other1-addressLine1"[^>]*value=""/);
+        expect(response.text).toContain(
+            "If you add this address, address line 1, town or city and postcode are required.",
+        );
+        expect(response.text).not.toMatch(
+            /(Address line 1|Town or city|Postcode) <span class="optional">/,
+        );
+        expect(response.text).toContain(
+            'Address line 2 <span class="optional">(optional)</span>',
+        );
         expect(response.text).not.toContain("private-access-token");
         expect(profiles.get).toHaveBeenCalledWith("private-access-token");
     });
