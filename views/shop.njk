@@ -9,9 +9,9 @@
     <div class="container">
       <nav class="breadcrumb" aria-label="Breadcrumb">
         <ol>
-          <li><a href="/{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}">Home</a></li>
+          <li><a href="/">Home</a></li>
           {% if selectedCategory %}
-            <li><a href="/shop{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}">Shop</a></li>
+            <li><a href="/shop">Shop</a></li>
             <li aria-current="page">{{ selectedCategory }}</li>
           {% else %}
             <li aria-current="page">Shop</li>
@@ -38,11 +38,11 @@
             {% if categories.length %}
               <ul class="category-list" role="list">
                 <li>
-                  <a class="category-link" href="/shop{% if searchQuery or shippingDestination %}?{% if searchQuery %}q={{ searchQuery | urlencode }}{% endif %}{% if shippingDestination %}{% if searchQuery %}&amp;{% endif %}country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}{% endif %}"{% if not selectedCategory %} aria-current="page"{% endif %}>All products</a>
+                  <a class="category-link" href="/shop{% if searchQuery %}?q={{ searchQuery | urlencode }}{% endif %}"{% if not selectedCategory %} aria-current="page"{% endif %}>All products</a>
                 </li>
                 {% for category in categories %}
                   <li>
-                    <a class="category-link" href="/shop?category={{ category | urlencode }}{% if searchQuery %}&amp;q={{ searchQuery | urlencode }}{% endif %}{% if shippingDestination %}&amp;country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}"{% if category == selectedCategory %} aria-current="page"{% endif %}>{{ category }}</a>
+                    <a class="category-link" href="/shop?category={{ category | urlencode }}{% if searchQuery %}&amp;q={{ searchQuery | urlencode }}{% endif %}"{% if category == selectedCategory %} aria-current="page"{% endif %}>{{ category }}</a>
                   </li>
                 {% endfor %}
               </ul>
@@ -112,17 +112,11 @@
 
                   <div class="product-footer">
                     <p class="product-price">{{ product.price }}</p>
-                    {% if shippingDestination %}
-                      <form action="/cart/items/add" method="post">
-                        <input type="hidden" name="productId" value="{{ product.id }}">
-                        <input type="hidden" name="quantity" value="1">
-                        <input type="hidden" name="country" value="{{ shippingDestination.country }}">
-                        <input type="hidden" name="postcode" value="{{ shippingDestination.postcode }}">
-                        <button type="submit" class="add-to-cart" aria-label="Add {{ product.name }} to cart">Add to cart</button>
-                      </form>
-                    {% else %}
-                      <p><a href="/cart">Enter your UK delivery address before adding to cart</a></p>
-                    {% endif %}
+                    <form action="/cart/items/add" method="post">
+                      <input type="hidden" name="productId" value="{{ product.id }}">
+                      <input type="hidden" name="quantity" value="1">
+                      <button type="submit" class="add-to-cart" aria-label="Add {{ product.name }} to cart">Add to cart</button>
+                    </form>
                   </div>
                 </div>
               </article>

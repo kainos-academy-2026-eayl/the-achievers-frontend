@@ -1,7 +1,15 @@
 import { randomUUID } from "node:crypto";
 import request from "supertest";
 import session, { type SessionData } from "express-session";
-import { afterEach, beforeAll, beforeEach, describe, expect, it, vi } from "vitest";
+import {
+	afterEach,
+	beforeAll,
+	beforeEach,
+	describe,
+	expect,
+	it,
+	vi,
+} from "vitest";
 import { createApp } from "../src/app";
 
 const credentials = {
@@ -9,7 +17,15 @@ const credentials = {
 	password: " LongEnoughPassword123! ",
 };
 const loginResponse = {
-	accessToken: "private-access-token",
+	accessToken: `eyJhbGciOiJIUzI1NiJ9.${Buffer.from(
+		JSON.stringify({
+			sub: "1",
+			iss: "the-achievers-backend",
+			aud: "the-achievers-api",
+			role: "user",
+			exp: Math.floor(Date.now() / 1000) + 7200,
+		}),
+	).toString("base64url")}.test-signature`,
 	tokenType: "Bearer",
 	expiresIn: 3600,
 	user: {
@@ -50,7 +66,10 @@ describe.skipIf(!backendUrl)("Login with the real backend", () => {
 			body: JSON.stringify({ name, ...realCredentials }),
 			signal: AbortSignal.timeout(10000),
 		});
-		expect(response.status, "The real backend must create the test account").toBe(201);
+		expect(
+			response.status,
+			"The real backend must create the test account",
+		).toBe(201);
 		expect(await response.json()).toMatchObject({
 			name,
 			email: realCredentials.email,
@@ -82,7 +101,10 @@ describe.skipIf(!backendUrl)("Login with the real backend", () => {
 		expect(cookie).toContain("HttpOnly");
 		expect(cookie).toContain("SameSite=Lax");
 		await agent.get("/session-check").expect(204);
-		expect(storedAuth?.user).toMatchObject({ name, email: realCredentials.email });
+		expect(storedAuth?.user).toMatchObject({
+			name,
+			email: realCredentials.email,
+		});
 		expect(storedAuth?.accessToken).toEqual(expect.any(String));
 		expect(storedAuth?.accessToken.length).toBeGreaterThan(0);
 		expect(storedAuth?.expiresAt).toBeGreaterThan(Date.now());
@@ -149,7 +171,7 @@ describe("Login", () => {
 		expect(response.status).toBe(303);
 		expect(response.headers.location).toBe("/");
 		expect(fetchSpy).toHaveBeenCalledWith(
-			new URL("http://backend.example:3000/API/login"),
+			new URL("http://backend.example:3000/api/login"),
 			{
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
@@ -169,6 +191,7 @@ describe("Login", () => {
 			accessToken: loginResponse.accessToken,
 			user: loginResponse.user,
 			expiresAt: expect.any(Number),
+			role: "user",
 		});
 		expect(storedAuth?.expiresAt).toBeGreaterThanOrEqual(before + 3600000);
 		expect(storedAuth?.expiresAt).toBeLessThanOrEqual(Date.now() + 3600000);

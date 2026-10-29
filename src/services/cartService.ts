@@ -1,6 +1,5 @@
 import type { CartClient } from "../clients/cartClient";
 import type { CartItemViewModel, CartViewModel } from "../models/cartViewModel";
-import type { ShippingDestination } from "../models/shippingDestination";
 
 const currency = new Intl.NumberFormat("en-GB", {
 	style: "currency",
@@ -19,11 +18,8 @@ export class CartService {
 		>,
 	) {}
 
-	async get(
-		cartId: string,
-		destination: ShippingDestination,
-	): Promise<CartViewModel> {
-		const data = await this.client.get(cartId, destination);
+	async get(cartId: string): Promise<CartViewModel> {
+		const data = await this.client.get(cartId);
 		if (!isRecord(data) || !Array.isArray(data.items)) {
 			throw new Error("Unexpected cart response format");
 		}
@@ -91,9 +87,8 @@ export class CartService {
 				"Cart shipping estimate exceeds supported precision or range",
 			);
 		}
-
-		const estimatedTotalPence = totalPence + shippingPence;
-		if (!Number.isSafeInteger(estimatedTotalPence)) {
+		const grandTotalPence = totalPence + shippingPence;
+		if (!Number.isSafeInteger(grandTotalPence)) {
 			throw new Error("Cart total exceeds supported precision or range");
 		}
 
@@ -101,34 +96,21 @@ export class CartService {
 			items,
 			count,
 			total: currency.format(totalPence / 100),
-			shippingEstimate: currency.format(shippingPence / 100),
-			estimatedTotal: currency.format(estimatedTotalPence / 100),
+			shipping:
+				shippingPence === 0 ? "Free" : currency.format(shippingPence / 100),
+			grandTotal: currency.format(grandTotalPence / 100),
 		};
 	}
 
-	add(
-		cartId: string,
-		productId: string,
-		quantity: number,
-		destination: ShippingDestination,
-	): Promise<void> {
-		return this.client.add(cartId, productId, quantity, destination);
+	add(cartId: string, productId: string, quantity: number): Promise<void> {
+		return this.client.add(cartId, productId, quantity);
 	}
 
-	update(
-		cartId: string,
-		productId: string,
-		quantity: number,
-		destination: ShippingDestination,
-	): Promise<void> {
-		return this.client.update(cartId, productId, quantity, destination);
+	update(cartId: string, productId: string, quantity: number): Promise<void> {
+		return this.client.update(cartId, productId, quantity);
 	}
 
-	remove(
-		cartId: string,
-		productId: string,
-		destination: ShippingDestination,
-	): Promise<void> {
-		return this.client.remove(cartId, productId, destination);
+	remove(cartId: string, productId: string): Promise<void> {
+		return this.client.remove(cartId, productId);
 	}
 }

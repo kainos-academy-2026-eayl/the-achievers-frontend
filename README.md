@@ -56,9 +56,21 @@ API_BASE_URL=http://localhost:3000
 
 Check backend availability with `curl http://localhost:3000/health`. The backend needs its own `DATABASE_URL`, `PORT`, and `JWT_SECRET`; do not copy `JWT_SECRET` into the frontend.
 
-The login form posts to the frontend's `POST /login`, which forwards JSON credentials to `POST /API/login` on the backend. Password whitespace is preserved. Validation errors and invalid credentials are displayed on the form; service failures show a generic error without exposing backend internals.
+The login form posts to the frontend's `POST /login`, which forwards JSON credentials to `POST /api/login` on the backend. Password whitespace is preserved. Validation errors and invalid credentials are displayed on the form; service failures show a generic error without exposing backend internals.
 
-On success, the frontend regenerates the session ID, stores the access token, user details, and expiry server-side, and redirects to `/`. The header shows the signed-in name and a logout button. The browser receives only an HTTP-only, SameSite=Lax session-ID cookie, never the token. `POST /logout` destroys the session; expired sessions are cleared on the next request. There is no token refresh.
+On success, the frontend regenerates the session ID and stores the access token, user details, role, and expiry server-side. Admins are redirected to `/admin`; ordinary users go to `/`. The header shows the signed-in name and a logout button. The browser receives only an HTTP-only, SameSite=Lax session-ID cookie, never the token. `POST /logout` destroys the session; expired sessions are cleared on the next request. There is no token refresh.
+
+### Admin dashboard
+
+`GET /admin` is a read-only overview of the existing public product catalogue, showing product/category totals and a product table. Empty catalogues show zero totals; backend failures show a retryable error rather than invented statistics. Product editing, order management, and user management are not implemented because no admin backend endpoints exist.
+
+The frontend decodes the JWT received directly from a successful backend login to read `role` (`admin` or `user`) and `exp`. It checks the expected issuer (`the-achievers-backend`), audience (`the-achievers-api`), and string subject; malformed or expired tokens produce a login-service error. This is **not signature verification** and does not replace backend authorization. Tokens supplied in browser headers or URLs are not used to establish a session. The session expires at the earlier of JWT `exp` and login time plus `expiresIn`. Role changes take effect after logging in again or session expiry.
+
+Only admin sessions see the dashboard navigation link. Anonymous or expired sessions are redirected to login; signed-in non-admin users receive HTTP 403 with a "Not allowed" page. Dashboard responses use `Cache-Control: no-store`.
+
+All current backend calls run server-to-server, so browser CORS does not affect this dashboard. Future protected backend requests must send the stored token as a Bearer authorization header and handle backend 401 (clear the session and return to login) and 403 (show not allowed). Direct browser calls would additionally require the backend to allow `Authorization` in its CORS headers. Never expose or log the token.
+
+Run `npm test -- tests/admin.test.ts tests/login.test.ts` to cover dashboard access, JWT claims, expiry, login redirects, catalogue totals, and backend failures without a running backend.
 
 Sessions currently use Express's in-memory development store: restarting the frontend signs everyone out, and this store is not suitable for production or multiple instances. Before production deployment, configure a shared production session store in [src/auth.ts](src/auth.ts), set a strong `SESSION_SECRET`, and serve HTTPS (production cookies are Secure). If TLS terminates at a reverse proxy, configure Express `trust proxy` for that trusted proxy so secure cookies can be issued.
 
@@ -211,12 +223,14 @@ Visit **`GET /cart`** to review the shopping cart. Home and Shop use real produc
 `GET /api/products`; their Add to Cart forms send the selected product ID, not a
 browser-supplied price. The home page features the first four catalogue products.
 
-The cart shows GBP unit prices, quantities, line subtotals and an order subtotal.
-Change a quantity and select **Update**, or select **Remove**. Each successful
+The cart shows GBP unit prices, quantities, line subtotals, an order subtotal,
+shipping and a total. Shipping is calculated by the backend (£4.99 standard, free
+when the subtotal is over £50) and returned as `estimatedShippingCost`; the
+frontend only displays it. Change a quantity and select **Update**, or select **Remove**. Each successful
 change redirects to a fresh backend-backed cart, updating all prices and the
 header badge. The badge counts units, not distinct products, and remains current
 when navigating back to Home or Shop. No browser JavaScript is required.
-Checkout is not implemented; delivery/additional charges are not included.
+Checkout is not implemented.
 
 ### Backend contract
 
@@ -236,7 +250,7 @@ customer ID. Clear/merge anonymous carts explicitly when authentication is added
 
 | Backend method and endpoint | Request body | Successful response |
 | --- | --- | --- |
-| `GET /api/cart` | None | `200`, JSON as below; a new/empty cart must return `{"items":[]}`, not `404` |
+| `GET /api/cart` | None | `200`, JSON as below; a new/empty cart must return `{"items":[],"estimatedShippingCost":0}`, not `404` |
 | `POST /api/cart/items` | `{"productId":"cue-1","quantity":1}` | `200`, updated cart; add units to an existing line, or create a new line |
 | `PATCH /api/cart/items/:productId` | `{"quantity":3}` | `200`, updated cart; replace the existing quantity |
 | `DELETE /api/cart/items/:productId` | None | `200`, updated cart; remove the line (safe to repeat) |
@@ -258,7 +272,8 @@ Example `GET /api/cart` response:
       },
       "quantity": 2
     }
-  ]
+  ],
+  "estimatedShippingCost": 0
 }
 ```
 
@@ -269,6 +284,9 @@ Prices must be finite, non-negative JSON numbers in GBP, with at most two
 decimal places. Quantities must be integers from `1` to `2147483647`, including
 the accumulated quantity after adding units. Use Remove rather than setting
 quantity to zero. Each product appears at most once.
+`estimatedShippingCost` is required on every response: a non-negative number in
+GBP with at most two decimal places, `0` when shipping is free. The backend owns
+the shipping rule; the frontend rejects a missing or invalid value.
 The frontend calculates subtotals in integer pennies, validates
 the complete cart, and rejects malformed data rather than dropping products or
 displaying incorrect totals.
@@ -295,14 +313,8 @@ Frontend form routes (these render/redirect HTML, not JSON):
 | `POST /cart/items/update` | `productId`, `quantity` |
 | `POST /cart/items/remove` | `productId` |
 
-Run `npm test -- tests/cart.test.ts tests/shop.test.ts tests/app.test.ts` for cart
-journeys, calculations, validation, isolation, failure handling, catalogue
-integration and backend request contract tests. These use test doubles; they do
-not certify a real backend deployment. No numeric platform latency/availability
-target was supplied: load/SLA validation remains necessary before deployment,
-and the five-second timeout is a client safeguard, not an SLA guarantee.
-
-To verify a real backend, use a disposable backend database, apply its migrations
+The cart tests run against a real backend only; there are no mocks or test
+doubles. To run them, use a disposable backend database, apply its migrations
 and run `npx prisma db seed` in the backend repository. Start the backend using
 that database, then run this command in the frontend repository:
 
@@ -310,10 +322,14 @@ that database, then run this command in the frontend repository:
 CART_INTEGRATION_BACKEND_URL=http://localhost:3000 npm test -- tests/cart.integration.test.ts
 ```
 
-This test uses the real HTTP clients and seeded products, checks the rendered
-cart totals and quantities, exercises updates/removals, verifies browser cart
-isolation, and removes its own cart items afterwards. It is skipped when the URL
-is unset; never point it at a production backend.
+The tests use the real HTTP clients and seeded products. They cover add, update
+and remove, totals, shipping around the £50 threshold, quantity validation,
+backend `404`/`409` rejections, browser cart isolation, and an unreachable
+backend (a real refused connection). Each test uses its own cart and removes its
+items afterwards. The tests are skipped when the URL is unset; never point them
+at a production backend. No numeric platform latency/availability target was
+supplied: load/SLA validation remains necessary before deployment, and the
+five-second timeout is a client safeguard, not an SLA guarantee.
 
 ## Troubleshooting
 

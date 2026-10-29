@@ -75,11 +75,21 @@ function setup() {
     return { app, profiles, agent: request.agent(app) };
 }
 
+const accessToken = `header.${Buffer.from(
+    JSON.stringify({
+        sub: "1",
+        iss: "the-achievers-backend",
+        aud: "the-achievers-api",
+        role: "user",
+        exp: Math.floor(Date.now() / 1000) + 3600,
+    }),
+).toString("base64url")}.test-signature`;
+
 async function logIn(agent: ReturnType<typeof request.agent>) {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
         new Response(
             JSON.stringify({
-                accessToken: "private-access-token",
+                accessToken,
                 tokenType: "Bearer",
                 expiresIn: 3600,
                 user: {
@@ -129,8 +139,8 @@ describe("Customer profile", () => {
         expect(response.text).toContain(
             'Address line 2 <span class="optional">(optional)</span>',
         );
-        expect(response.text).not.toContain("private-access-token");
-        expect(profiles.get).toHaveBeenCalledWith("private-access-token");
+        expect(response.text).not.toContain(accessToken);
+        expect(profiles.get).toHaveBeenCalledWith(accessToken);
     });
 
     it("asks logged-out visitors to log in", async () => {
@@ -158,7 +168,7 @@ describe("Customer profile", () => {
             .send(validForm)
             .expect(303)
             .expect("Location", "/profile?updated=1");
-        expect(profiles.update).toHaveBeenCalledWith("private-access-token", {
+        expect(profiles.update).toHaveBeenCalledWith(accessToken, {
             name: "New Name",
             email: "customer@example.com",
             phone: "07123 456789",
@@ -272,6 +282,9 @@ describe("Customer profile", () => {
 
         expect(response.status).toBe(400);
         expect(response.text).toContain("Your current password is incorrect");
+        expect(response.text).toContain(
+            "Enter your current password to save any changes.",
+        );
         expect(response.text).not.toContain("WrongPassword123");
     });
 
