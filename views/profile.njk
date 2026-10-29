@@ -5,63 +5,125 @@
   <link rel="stylesheet" href="/css/profile.css">
 {% endblock %}
 
-{% macro field(id, label, type="text", autocomplete="off", required=false, maxlength=100, hint="") %}
+{% macro field(id, label, type="text", autocomplete="off", required=false, maxlength=100, hint="", conditional=false) %}
   {% set error = fieldErrors[id] if fieldErrors else "" %}
   <div class="auth-field{{ ' has-error' if error }}">
-    <label for="profile-{{ id }}">{{ label }}{% if not required %} <span class="optional">(optional)</span>{% endif %}</label>
+    <label for="profile-{{ id }}">{{ label }}{% if not required and not conditional %} <span class="optional">(optional)</span>{% endif %}</label>
     {% if hint %}<p class="auth-hint" id="profile-{{ id }}-hint">{{ hint }}</p>{% endif %}
     {% if error %}<p class="field-error" id="profile-{{ id }}-error">{{ error }}</p>{% endif %}
     <input id="profile-{{ id }}" name="{{ id }}" type="{{ type }}" autocomplete="{{ autocomplete }}" maxlength="{{ maxlength }}"
-      {% if type != "password" %}value="{{ profile[id] | default('') }}"{% endif %}
+      {% if type != "password" %}value="{{ values[id] | default('') }}"{% endif %}
       {% if required %}required{% endif %}
       {% if error %}aria-invalid="true"{% endif %}
       {% if error or hint %}aria-describedby="{{ 'profile-' + id + '-hint' if hint }} {{ 'profile-' + id + '-error' if error }}"{% endif %}>
   </div>
 {% endmacro %}
 
-{% block content %}
-  <section class="auth-page" aria-labelledby="profile-title">
-  <div class="auth-card profile-card">
-    <h1 id="profile-title">My Profile</h1>
-
-    {% if notLoggedIn %}
-      <p class="auth-notice" role="alert">Please log in to view your profile.</p>
-      <a class="btn btn-green" href="/login">Log in</a>
-    {% elif loadError %}
-      <p class="auth-notice" role="alert">We can't load your profile right now. Please try again later.</p>
-      <a class="btn btn-gold" href="/profile">Try again</a>
-    {% else %}
-      {% if updated %}
-        <p class="profile-success" role="status">Your profile has been updated.</p>
-      {% endif %}
-      {% if formError %}
-        <p class="profile-error" role="alert">{{ formError }}</p>
-      {% endif %}
-
-      <form class="auth-form" action="/profile" method="post" novalidate>
-        <fieldset>
-          <legend>Personal details</legend>
-          {{ field("name", "Name", autocomplete="name", required=true) }}
-          {{ field("email", "Email", type="email", autocomplete="email", required=true, maxlength=254) }}
-          {{ field("phone", "Phone number", type="tel", autocomplete="tel", maxlength=20, hint="UK number, for example 07123 456789") }}
-        </fieldset>
-
-        <fieldset>
-          <legend>Delivery address</legend>
-          {{ field("addressLine1", "Address line 1", autocomplete="address-line1") }}
-          {{ field("addressLine2", "Address line 2", autocomplete="address-line2") }}
-          {{ field("city", "Town or city", autocomplete="address-level2", maxlength=60) }}
-          {{ field("postcode", "Postcode", autocomplete="postal-code", maxlength=10) }}
-        </fieldset>
-
-        <fieldset>
-          <legend>Confirm changes</legend>
-          {{ field("currentPassword", "Current password", type="password", autocomplete="current-password", required=true, maxlength=128, hint="Enter your current password to save any changes.") }}
-        </fieldset>
-
-        <button class="btn btn-green" type="submit">Save changes</button>
-      </form>
-    {% endif %}
+{% macro addressFields(slot, section, withLabel=false) %}
+  <p class="auth-hint">If you add this address, address line 1, town or city and postcode are required.</p>
+  {% if withLabel %}
+    {{ field(slot + "-label", "Address name", maxlength=40, hint="For example Work or Mum's house") }}
+  {% endif %}
+  <div class="field-grid">
+    {{ field(slot + "-addressLine1", "Address line 1", autocomplete=section + " address-line1", conditional=true) }}
+    {{ field(slot + "-addressLine2", "Address line 2", autocomplete=section + " address-line2") }}
+    {{ field(slot + "-city", "Town or city", autocomplete=section + " address-level2", maxlength=60, conditional=true) }}
+    {{ field(slot + "-postcode", "Postcode", autocomplete=section + " postal-code", maxlength=10, conditional=true) }}
   </div>
+{% endmacro %}
+
+{% macro otherAddressPanel(slot, number) %}
+  {% set errors = fieldErrors or {} %}
+  {% set hasError = errors[slot + "-label"] or errors[slot + "-addressLine1"] or errors[slot + "-addressLine2"] or errors[slot + "-city"] or errors[slot + "-postcode"] %}
+  {% set line1 = values[slot + "-addressLine1"] %}
+  <details class="address-panel{{ ' has-error' if hasError }}"{% if hasError %} open{% endif %}>
+    <summary>
+      <span class="address-panel-title">{{ values[slot + "-label"] or ("Other address " + number) }}</span>
+      <span class="address-panel-summary">{{ (line1 + ", " + values[slot + "-postcode"]) if line1 else "Not added - click to add" }}</span>
+    </summary>
+    <div class="address-panel-body">
+      {{ addressFields(slot, "section-" + slot, withLabel=true) }}
+    </div>
+  </details>
+{% endmacro %}
+
+{% block content %}
+  <section class="profile-dashboard" aria-labelledby="profile-title">
+    <div class="container">
+      {% if notLoggedIn or loadError %}
+        <div class="auth-card profile-message">
+          <h1 id="profile-title">My Profile</h1>
+          {% if notLoggedIn %}
+            <p class="auth-notice" role="alert">Please log in to view your profile.</p>
+            <a class="btn btn-green" href="/login">Log in</a>
+          {% else %}
+            <p class="auth-notice" role="alert">We can't load your profile right now. Please try again later.</p>
+            <a class="btn btn-gold" href="/profile">Try again</a>
+          {% endif %}
+        </div>
+      {% else %}
+        <div class="dashboard-layout">
+          <aside class="dashboard-sidebar">
+            <div class="account-summary">
+              <span class="account-avatar" aria-hidden="true">{{ account.name | first | upper }}</span>
+              <div>
+                <p class="account-name">{{ account.name }}</p>
+                <p class="account-email">{{ account.email }}</p>
+                {% if account.memberSince %}<p class="account-since">Member since {{ account.memberSince }}</p>{% endif %}
+              </div>
+            </div>
+            <nav aria-label="Profile sections">
+              <ul class="dashboard-nav">
+                <li><a href="#personal">Personal details</a></li>
+                <li><a href="#addresses">Addresses</a></li>
+                <li><a href="#security">Save changes</a></li>
+              </ul>
+            </nav>
+          </aside>
+
+          <div class="dashboard-content">
+            <h1 id="profile-title">My Profile</h1>
+            {% if updated %}
+              <p class="profile-success" role="status">Your profile has been updated.</p>
+            {% endif %}
+            {% if formError %}
+              <p class="profile-error" role="alert">{{ formError }}</p>
+            {% endif %}
+
+            <form action="/profile" method="post" novalidate>
+              <section class="dashboard-card" id="personal" aria-labelledby="personal-title">
+                <h2 id="personal-title">Personal details</h2>
+                <div class="field-grid">
+                  {{ field("name", "Name", autocomplete="name", required=true) }}
+                  {{ field("email", "Email", type="email", autocomplete="email", required=true, maxlength=254) }}
+                  {{ field("phone", "Phone number", type="tel", autocomplete="tel", maxlength=20, hint="UK number, for example 07123 456789") }}
+                </div>
+              </section>
+
+              <section class="dashboard-card" id="addresses" aria-labelledby="addresses-title">
+                <h2 id="addresses-title">Addresses</h2>
+                <p class="auth-hint">You can save up to 3 addresses. Add your home address first. Clear an address to remove it.</p>
+
+                <h3>Home address</h3>
+                {{ addressFields("home", "section-home") }}
+
+                <h3>Other addresses</h3>
+                {% if fieldErrors and fieldErrors.otherAddresses %}
+                  <p class="field-error" role="alert">{{ fieldErrors.otherAddresses }}</p>
+                {% endif %}
+                {{ otherAddressPanel("other0", 1) }}
+                {{ otherAddressPanel("other1", 2) }}
+              </section>
+
+              <section class="dashboard-card save-card" id="security" aria-labelledby="security-title">
+                <h2 id="security-title">Save changes</h2>
+                {{ field("currentPassword", "Current password", type="password", autocomplete="current-password", required=true, maxlength=128, hint="Enter your current password to save any changes.") }}
+                <button class="btn btn-green" type="submit">Save changes</button>
+              </section>
+            </form>
+          </div>
+        </div>
+      {% endif %}
+    </div>
   </section>
 {% endblock %}

@@ -1,15 +1,16 @@
 import { type Request, type Response, Router } from "express";
 import {
 	type FieldErrors,
-	PROFILE_FIELDS,
 	ProfileApiError,
 	type ProfileClient,
 	type ProfileUpdate,
 } from "../clients/profileClient";
+import { ProfileFormHelper } from "../helpers/profileFormHelper";
 
 export type ProfileOperations = Pick<ProfileClient, "get" | "update">;
 
 const title = "My Profile | Cue Corner";
+const form = new ProfileFormHelper();
 
 function renderLoggedOut(res: Response): void {
 	res.status(401).render("profile", { title, notLoggedIn: true });
@@ -37,7 +38,8 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 			const profile = await profiles.get(auth.accessToken);
 			res.render("profile", {
 				title,
-				profile,
+				account: form.accountSummary(profile),
+				values: form.profileToForm(profile),
 				updated: req.query.updated === "1",
 			});
 		} catch (error) {
@@ -56,16 +58,20 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 			renderLoggedOut(res);
 			return;
 		}
-		const body = req.body ?? {};
-		const read = (field: string) =>
-			typeof body[field] === "string" ? body[field] : "";
-		const update = Object.fromEntries(
-			[...PROFILE_FIELDS, "currentPassword"].map((field) => [
-				field,
-				read(field),
-			]),
-		) as ProfileUpdate;
-		const { currentPassword: _, ...submitted } = update;
+		const body: Record<string, unknown> = req.body ?? {};
+		const values = form.bodyToForm(body);
+		const update: ProfileUpdate = {
+			name: values.name ?? "",
+			email: values.email ?? "",
+			phone: values.phone ?? "",
+			homeAddress: form.formToAddress(values, "home"),
+			otherAddresses: [
+				form.formToAddress(values, "other0"),
+				form.formToAddress(values, "other1"),
+			],
+			currentPassword:
+				typeof body.currentPassword === "string" ? body.currentPassword : "",
+		};
 
 		const renderErrors = (
 			status: number,
@@ -74,8 +80,9 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 		) =>
 			res.status(status).render("profile", {
 				title,
-				profile: submitted,
-				fieldErrors,
+				account: form.accountSummary(auth.user),
+				values,
+				fieldErrors: form.toFormErrors(fieldErrors),
 				formError:
 					formError ??
 					"Your changes have not been saved. Please fix the errors below.",
@@ -83,11 +90,7 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 
 		try {
 			const saved = await profiles.update(auth.accessToken, update);
-			auth.user = {
-				...auth.user,
-				name: saved.name ?? auth.user.name,
-				email: saved.email ?? auth.user.email,
-			};
+			auth.user = { ...auth.user, name: saved.name, email: saved.email };
 			res.redirect(303, "/profile?updated=1");
 		} catch (error) {
 			if (error instanceof ProfileApiError) {
