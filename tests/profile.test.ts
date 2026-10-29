@@ -41,6 +41,8 @@ function token(overrides: Record<string, unknown> = {}) {
 	return `${header}.${payload}.test-signature`;
 }
 
+const accessToken = token();
+
 function setup() {
     const profiles = {
         get: vi.fn(async (_token: string) => profile),
@@ -66,7 +68,7 @@ async function logIn(agent: ReturnType<typeof request.agent>) {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
         new Response(
             JSON.stringify({
-                accessToken: token(),
+                accessToken,
                 tokenType: "Bearer",
                 expiresIn: 3600,
                 user: {
@@ -101,7 +103,8 @@ describe("Customer profile", () => {
         expect(response.text).toContain('value="07123456789"');
         expect(response.text).toContain('value="1 Cue Street"');
         expect(response.text).toContain('value="BT1 1AA"');
-        expect(profiles.get).toHaveBeenCalledWith(expect.any(String));
+        expect(response.text).not.toContain(accessToken);
+        expect(profiles.get).toHaveBeenCalledWith(accessToken);
     });
 
     it("asks logged-out visitors to log in", async () => {
@@ -129,7 +132,7 @@ describe("Customer profile", () => {
             .expect(303)
             .expect("Location", "/profile?updated=1");
         expect(profiles.update).toHaveBeenCalledWith(
-            expect.any(String),
+            accessToken,
             validForm,
         );
 

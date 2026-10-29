@@ -28,8 +28,6 @@
           <form class="search" role="search" action="/shop" method="get">
             <label class="visually-hidden" for="site-search">Search products</label>
             <input id="site-search" name="q" type="search" value="{{ searchQuery | default('') }}" maxlength="100" autocomplete="off" list="search-suggestions" placeholder="Search for cues, cases, balls and more">
-            {% if shippingDestination %}
-            {% endif %}
             <button type="submit" class="search-btn" aria-label="Search">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="11" cy="11" r="7"></circle>

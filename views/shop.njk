@@ -112,15 +112,11 @@
 
                   <div class="product-footer">
                     <p class="product-price">{{ product.price }}</p>
-                    {% if shippingDestination %}
-                      <form action="/cart/items/add" method="post">
-                        <input type="hidden" name="productId" value="{{ product.id }}">
-                        <input type="hidden" name="quantity" value="1">
-                        <button type="submit" class="add-to-cart" aria-label="Add {{ product.name }} to cart">Add to cart</button>
-                      </form>
-                    {% else %}
-                      <p><a href="/cart">Enter your UK delivery address before adding to cart</a></p>
-                    {% endif %}
+                    <form action="/cart/items/add" method="post">
+                      <input type="hidden" name="productId" value="{{ product.id }}">
+                      <input type="hidden" name="quantity" value="1">
+                      <button type="submit" class="add-to-cart" aria-label="Add {{ product.name }} to cart">Add to cart</button>
+                    </form>
                   </div>
                 </div>
               </article>
