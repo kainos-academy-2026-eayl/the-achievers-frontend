@@ -81,6 +81,21 @@ function renderLoggedOut(res: Response): void {
 	res.status(401).render("profile", { title, notLoggedIn: true });
 }
 
+function accountSummary(user: {
+	name: string;
+	email: string;
+	createdAt: string;
+}) {
+	const joined = new Date(user.createdAt);
+	return {
+		name: user.name,
+		email: user.email,
+		memberSince: Number.isNaN(joined.getTime())
+			? ""
+			: joined.toLocaleDateString("en-GB", { month: "long", year: "numeric" }),
+	};
+}
+
 function getAuth(req: Request, res: Response) {
 	return res.locals.currentUser ? req.session.auth : undefined;
 }
@@ -103,6 +118,7 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 			const profile = await profiles.get(auth.accessToken);
 			res.render("profile", {
 				title,
+				account: accountSummary(profile),
 				values: profileToForm(profile),
 				updated: req.query.updated === "1",
 			});
@@ -144,6 +160,7 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 		) =>
 			res.status(status).render("profile", {
 				title,
+				account: accountSummary(auth.user),
 				values,
 				fieldErrors: toFormErrors(fieldErrors),
 				formError:

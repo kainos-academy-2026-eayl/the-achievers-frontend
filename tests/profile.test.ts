@@ -129,6 +129,14 @@ describe("Customer profile", () => {
         expect(response.text).toContain(
             'Address line 2 <span class="optional">(optional)</span>',
         );
+        expect(response.text).toContain("Member since January 2026");
+        expect(response.text).toContain('href="#addresses"');
+        expect(response.text).toMatch(
+            /<details class="address-panel">\s*<summary>\s*<span class="address-panel-title">Work<\/span>\s*<span class="address-panel-summary">2 Office Park, BT2 8LA<\/span>/,
+        );
+        expect(response.text).toMatch(
+            /Other address 2<\/span>\s*<span class="address-panel-summary">Not added - click to add/,
+        );
         expect(response.text).not.toContain("private-access-token");
         expect(profiles.get).toHaveBeenCalledWith("private-access-token");
     });
@@ -234,6 +242,9 @@ describe("Customer profile", () => {
             /name="other1-addressLine1"[^>]*value="4 Side Street"/,
         );
         expect(response.text).toContain('aria-invalid="true"');
+        expect(response.text).toContain(
+            '<details class="address-panel has-error" open>',
+        );
     });
 
     it("shows the address limit message", async () => {
