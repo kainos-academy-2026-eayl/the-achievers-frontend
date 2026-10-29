@@ -11,7 +11,7 @@
     <div class="container hero-inner">
       <h1 id="hero-title">Welcome to Cue Corner</h1>
       <p class="hero-sub">Everything You Need for the Perfect Shot</p>
-      <a class="btn btn-gold btn-large" href="/shop{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}">Shop Now</a>
+      <a class="btn btn-gold btn-large" href="/shop">Shop Now</a>
     </div>
   </section>
 
@@ -57,17 +57,11 @@
           </div>
           <h3>{{ product.name }}</h3>
           <p class="price">{{ product.price }}</p>
-          {% if shippingDestination %}
-            <form action="/cart/items/add" method="post">
-              <input type="hidden" name="productId" value="{{ product.id }}">
-              <input type="hidden" name="quantity" value="1">
-              <input type="hidden" name="country" value="{{ shippingDestination.country }}">
-              <input type="hidden" name="postcode" value="{{ shippingDestination.postcode }}">
-              <button type="submit" class="btn btn-green" aria-label="Add {{ product.name }} to cart">Add to Cart</button>
-            </form>
-          {% else %}
-            <p><a href="/cart">Enter your UK delivery address before adding to cart</a></p>
-          {% endif %}
+          <form action="/cart/items/add" method="post">
+            <input type="hidden" name="productId" value="{{ product.id }}">
+            <input type="hidden" name="quantity" value="1">
+            <button type="submit" class="btn btn-green" aria-label="Add {{ product.name }} to cart">Add to Cart</button>
+          </form>
         </article>
         {% endfor %}
       </div>
@@ -80,7 +74,7 @@
     <div class="container cta-inner">
       <h2 id="cta-title">Upgrade Your Game Today</h2>
       <p>Free delivery on orders over &pound;50.</p>
-      <a class="btn btn-gold" href="/shop{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}">Browse the Shop</a>
+      <a class="btn btn-gold" href="/shop">Browse the Shop</a>
     </div>
   </section>
 
