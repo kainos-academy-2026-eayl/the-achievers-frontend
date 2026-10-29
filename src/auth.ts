@@ -2,6 +2,7 @@ import { randomBytes } from "node:crypto";
 import { promisify } from "node:util";
 import type { Express, Response } from "express";
 import session from "express-session";
+import type { ShippingDestination } from "./models/shippingDestination";
 
 interface LoginUser {
 	email: string;
@@ -22,8 +23,46 @@ declare module "express-session" {
 			accessToken: string;
 			user: LoginUser;
 			expiresAt: number;
+			role: "admin" | "user";
 		};
+		shippingDestination?: ShippingDestination;
 	}
+}
+
+function readLoginClaims(token: string): {
+	role: "admin" | "user";
+	expiresAt: number;
+} {
+	const parts = token.split(".");
+	const payload = parts[1];
+	if (
+		parts.length !== 3 ||
+		!payload ||
+		parts.some((part) => !/^[A-Za-z0-9_-]+$/.test(part))
+	) {
+		throw new Error("Invalid JWT format");
+	}
+	// Decode only tokens received directly from the login backend; this is not signature verification.
+	const claims: unknown = JSON.parse(
+		Buffer.from(payload, "base64url").toString("utf8"),
+	);
+	if (typeof claims !== "object" || claims === null) {
+		throw new Error("Invalid JWT payload");
+	}
+	const { role, exp, iss, aud, sub } = claims as Record<string, unknown>;
+	if (
+		(role !== "admin" && role !== "user") ||
+		typeof exp !== "number" ||
+		!Number.isSafeInteger(exp * 1000) ||
+		exp * 1000 <= Date.now() ||
+		iss !== "the-achievers-backend" ||
+		aud !== "the-achievers-api" ||
+		typeof sub !== "string" ||
+		!sub
+	) {
+		throw new Error("Invalid JWT claims");
+	}
+	return { role, expiresAt: exp * 1000 };
 }
 
 function isLoginResponse(value: unknown): value is LoginResponse {
@@ -101,6 +140,7 @@ export function registerAuth(app: Express, backendUrl: string): void {
 				}
 			} else {
 				res.locals.currentUser = req.session.auth.user;
+				res.locals.isAdmin = req.session.auth.role === "admin";
 			}
 		}
 		next();
@@ -130,7 +170,7 @@ export function registerAuth(app: Express, backendUrl: string): void {
 
 		let backendResponse: globalThis.Response;
 		try {
-			backendResponse = await fetch(new URL("/API/login", backendUrl), {
+			backendResponse = await fetch(new URL("/api/login", backendUrl), {
 				method: "POST",
 				headers: { "Content-Type": "application/json" },
 				body: JSON.stringify({ email: trimmedEmail, password }),
@@ -183,6 +223,18 @@ export function registerAuth(app: Express, backendUrl: string): void {
 			return loginError(res, 502, failureMessage, trimmedEmail);
 		}
 
+		let claims: ReturnType<typeof readLoginClaims>;
+		try {
+			claims = readLoginClaims(data.accessToken);
+		} catch {
+			console.error("Login backend returned invalid token claims.");
+			return loginError(res, 502, failureMessage, trimmedEmail);
+		}
+		const expiresAt = Math.min(
+			claims.expiresAt,
+			Date.now() + data.expiresIn * 1000,
+		);
+
 		try {
 			await promisify(req.session.regenerate).call(req.session);
 			req.session.auth = {
@@ -192,9 +244,10 @@ export function registerAuth(app: Express, backendUrl: string): void {
 					name: data.user.name,
 					createdAt: data.user.createdAt,
 				},
-				expiresAt: Date.now() + data.expiresIn * 1000,
+				expiresAt,
+				role: claims.role,
 			};
-			req.session.cookie.maxAge = data.expiresIn * 1000;
+			req.session.cookie.maxAge = expiresAt - Date.now();
 			await promisify(req.session.save).call(req.session);
 		} catch {
 			console.error("Unable to save the login session.");
@@ -208,7 +261,7 @@ export function registerAuth(app: Express, backendUrl: string): void {
 			return loginError(res, 500, failureMessage, trimmedEmail);
 		}
 
-		return res.redirect(303, "/");
+		return res.redirect(303, claims.role === "admin" ? "/admin" : "/");
 	});
 
 	app.post("/logout", async (req, res) => {

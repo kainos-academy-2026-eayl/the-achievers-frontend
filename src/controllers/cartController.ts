@@ -1,10 +1,7 @@
 import { randomUUID } from "node:crypto";
 import { Router, type Request, type Response } from "express";
 import { CartApiError } from "../clients/cartClient";
-import {
-	parseShippingDestination,
-	type ShippingDestination,
-} from "../models/shippingDestination";
+import type { ShippingDestination } from "../models/shippingDestination";
 import type { CartService } from "../services/cartService";
 
 export type CartOperations = Pick<
@@ -103,18 +100,9 @@ export function createCartRouter(service: CartOperations): Router {
 				? messages[req.query.notice]
 				: undefined;
 		const cartId = ensureCartId(req, res);
-		const destination = parseShippingDestination(
-			req.query.country,
-			req.query.postcode,
-		);
+		const destination = req.session.shippingDestination;
 		if (!destination) {
-			renderAddressForm(
-				res,
-				200,
-				req.query.country !== undefined || req.query.postcode !== undefined
-					? "Enter a valid UK postcode to continue."
-					: undefined,
-			);
+			renderAddressForm(res);
 			return;
 		}
 		await renderCart(res, cartId, destination, 200, undefined, message);
@@ -148,26 +136,18 @@ export function createCartRouter(service: CartOperations): Router {
 			return;
 		}
 
-		const destination = {
+		req.session.shippingDestination = {
 			country: "GB" as const,
 			postcode: postcode.trim().toUpperCase(),
 		};
-		const query = new URLSearchParams({
-			country: destination.country,
-			postcode: destination.postcode,
-			notice: "address-saved",
-		});
-		res.redirect(303, `/cart?${query.toString()}`);
+		res.redirect(303, "/cart?notice=address-saved");
 	});
 
 	for (const action of ["add", "update", "remove"] as const) {
 		router.post(`/items/${action}`, async (req, res) => {
 			const cartId = ensureCartId(req, res);
 			const body = req.body as Record<string, unknown> | undefined;
-			const destination = parseShippingDestination(
-				body?.country,
-				body?.postcode,
-			);
+			const destination = req.session.shippingDestination;
 			if (!destination) {
 				renderAddressForm(
 					res,
@@ -206,11 +186,7 @@ export function createCartRouter(service: CartOperations): Router {
 					await service[action](cartId, productId, quantity, destination);
 				}
 				const notices = { add: "added", update: "updated", remove: "removed" };
-				const query = new URLSearchParams({
-					country: destination.country,
-					postcode: destination.postcode,
-					notice: notices[action],
-				});
+				const query = new URLSearchParams({ notice: notices[action] });
 				res.redirect(303, `/cart?${query.toString()}`);
 			} catch (error) {
 				console.error(`Failed to ${action} cart item`, error);

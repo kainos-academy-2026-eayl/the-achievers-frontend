@@ -20,7 +20,7 @@
         <div class="container header-top-inner">
 
           <!-- Logo -->
-          <a class="logo" href="/{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}">
+          <a class="logo" href="/">
             <img class="logo-img" src="/css/images/logo.png" alt="Cue Corner home">
           </a>
 
@@ -29,8 +29,6 @@
             <label class="visually-hidden" for="site-search">Search products</label>
             <input id="site-search" name="q" type="search" value="{{ searchQuery | default('') }}" maxlength="100" autocomplete="off" list="search-suggestions" placeholder="Search for cues, cases, balls and more">
             {% if shippingDestination %}
-              <input type="hidden" name="country" value="GB">
-              <input type="hidden" name="postcode" value="{{ shippingDestination.postcode }}">
             {% endif %}
             <button type="submit" class="search-btn" aria-label="Search">
               <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
@@ -45,7 +43,7 @@
 
           <!-- Cart (icon with count badge) and Login -->
           <div class="header-actions">
-            <a class="header-btn cart-link" href="/cart{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}" aria-label="{% if cartCount == '?' %}Cart, item count unavailable{% else %}Cart, {{ cartCount | default(0) }} items{% endif %}">
+            <a class="header-btn cart-link" href="/cart" aria-label="{% if cartCount == '?' %}Cart, item count unavailable{% else %}Cart, {{ cartCount | default(0) }} items{% endif %}">
               <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
                 <circle cx="9" cy="21" r="1"></circle>
                 <circle cx="20" cy="21" r="1"></circle>
@@ -69,9 +67,10 @@
       <!-- Level 2: navigation bar -->
       <nav class="main-nav" aria-label="Main">
         <ul class="container">
-          <li><a href="/{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}">Home</a></li>
-          <li><a href="/shop{% if shippingDestination %}?country=GB&amp;postcode={{ shippingDestination.postcode | urlencode }}{% endif %}">Shop</a></li>
+          <li><a href="/">Home</a></li>
+          <li><a href="/shop">Shop</a></li>
           <li><a href="/categories">Categories</a></li>
+          {% if isAdmin %}<li><a href="/admin">Admin dashboard</a></li>{% endif %}
         </ul>
       </nav>
     </header>

@@ -56,9 +56,21 @@ API_BASE_URL=http://localhost:3000
 
 Check backend availability with `curl http://localhost:3000/health`. The backend needs its own `DATABASE_URL`, `PORT`, and `JWT_SECRET`; do not copy `JWT_SECRET` into the frontend.
 
-The login form posts to the frontend's `POST /login`, which forwards JSON credentials to `POST /API/login` on the backend. Password whitespace is preserved. Validation errors and invalid credentials are displayed on the form; service failures show a generic error without exposing backend internals.
+The login form posts to the frontend's `POST /login`, which forwards JSON credentials to `POST /api/login` on the backend. Password whitespace is preserved. Validation errors and invalid credentials are displayed on the form; service failures show a generic error without exposing backend internals.
 
-On success, the frontend regenerates the session ID, stores the access token, user details, and expiry server-side, and redirects to `/`. The header shows the signed-in name and a logout button. The browser receives only an HTTP-only, SameSite=Lax session-ID cookie, never the token. `POST /logout` destroys the session; expired sessions are cleared on the next request. There is no token refresh.
+On success, the frontend regenerates the session ID and stores the access token, user details, role, and expiry server-side. Admins are redirected to `/admin`; ordinary users go to `/`. The header shows the signed-in name and a logout button. The browser receives only an HTTP-only, SameSite=Lax session-ID cookie, never the token. `POST /logout` destroys the session; expired sessions are cleared on the next request. There is no token refresh.
+
+### Admin dashboard
+
+`GET /admin` is a read-only overview of the existing public product catalogue, showing product/category totals and a product table. Empty catalogues show zero totals; backend failures show a retryable error rather than invented statistics. Product editing, order management, and user management are not implemented because no admin backend endpoints exist.
+
+The frontend decodes the JWT received directly from a successful backend login to read `role` (`admin` or `user`) and `exp`. It checks the expected issuer (`the-achievers-backend`), audience (`the-achievers-api`), and string subject; malformed or expired tokens produce a login-service error. This is **not signature verification** and does not replace backend authorization. Tokens supplied in browser headers or URLs are not used to establish a session. The session expires at the earlier of JWT `exp` and login time plus `expiresIn`. Role changes take effect after logging in again or session expiry.
+
+Only admin sessions see the dashboard navigation link. Anonymous or expired sessions are redirected to login; signed-in non-admin users receive HTTP 403 with a "Not allowed" page. Dashboard responses use `Cache-Control: no-store`.
+
+All current backend calls run server-to-server, so browser CORS does not affect this dashboard. Future protected backend requests must send the stored token as a Bearer authorization header and handle backend 401 (clear the session and return to login) and 403 (show not allowed). Direct browser calls would additionally require the backend to allow `Authorization` in its CORS headers. Never expose or log the token.
+
+Run `npm test -- tests/admin.test.ts tests/login.test.ts` to cover dashboard access, JWT claims, expiry, login redirects, catalogue totals, and backend failures without a running backend.
 
 Sessions currently use Express's in-memory development store: restarting the frontend signs everyone out, and this store is not suitable for production or multiple instances. Before production deployment, configure a shared production session store in [src/auth.ts](src/auth.ts), set a strong `SESSION_SECRET`, and serve HTTPS (production cookies are Secure). If TLS terminates at a reverse proxy, configure Express `trust proxy` for that trusted proxy so secure cookies can be issued.
 

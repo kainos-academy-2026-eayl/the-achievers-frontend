@@ -20,8 +20,6 @@ import {
 	getCategories,
 	ProductService,
 } from "./services/productService";
-import { parseShippingDestination } from "./models/shippingDestination";
-
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
@@ -64,10 +62,7 @@ export function createApp(
 	);
 
 	app.use(async (req, res, next) => {
-		const destination = parseShippingDestination(
-			req.query.country,
-			req.query.postcode,
-		);
+		const destination = req.session.shippingDestination;
 		res.locals.shippingDestination = destination;
 		if (
 			req.method !== "GET" ||
@@ -77,6 +72,7 @@ export function createApp(
 				"/login",
 				"/registration",
 				"/reset-pass",
+				"/admin",
 				"/profile",
 			].includes(req.path)
 		) {
@@ -105,6 +101,28 @@ export function createApp(
 
 	app.use("/cart", createCartRouter(cartService));
 	app.use("/profile", createProfileRouter(profileService));
+
+	app.get("/admin", async (req: Request, res: Response) => {
+		res.set("Cache-Control", "no-store");
+		if (!req.session.auth) {
+			return res.redirect(303, "/login");
+		}
+		const title = "Admin dashboard | Cue Corner";
+		if (req.session.auth.role !== "admin") {
+			return res.status(403).render("admin", { title, notAllowed: true });
+		}
+		try {
+			const products = await productService.getAll();
+			return res.render("admin", {
+				title,
+				products,
+				categories: getCategories(products),
+			});
+		} catch (error) {
+			console.error("Failed to load admin catalogue overview", error);
+			return res.status(502).render("admin", { title, loadError: true });
+		}
+	});
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
