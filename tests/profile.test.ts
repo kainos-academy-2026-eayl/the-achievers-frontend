@@ -48,11 +48,21 @@ function setup() {
     return { app, profiles, agent: request.agent(app) };
 }
 
+const accessToken = `header.${Buffer.from(
+    JSON.stringify({
+        sub: "1",
+        iss: "the-achievers-backend",
+        aud: "the-achievers-api",
+        role: "user",
+        exp: Math.floor(Date.now() / 1000) + 3600,
+    }),
+).toString("base64url")}.test-signature`;
+
 async function logIn(agent: ReturnType<typeof request.agent>) {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
         new Response(
             JSON.stringify({
-                accessToken: "private-access-token",
+                accessToken,
                 tokenType: "Bearer",
                 expiresIn: 3600,
                 user: {
@@ -87,8 +97,8 @@ describe("Customer profile", () => {
         expect(response.text).toContain('value="07123456789"');
         expect(response.text).toContain('value="1 Cue Street"');
         expect(response.text).toContain('value="BT1 1AA"');
-        expect(response.text).not.toContain("private-access-token");
-        expect(profiles.get).toHaveBeenCalledWith("private-access-token");
+        expect(response.text).not.toContain(accessToken);
+        expect(profiles.get).toHaveBeenCalledWith(accessToken);
     });
 
     it("asks logged-out visitors to log in", async () => {
@@ -117,7 +127,7 @@ describe("Customer profile", () => {
             .expect(303)
             .expect("Location", "/profile?updated=1");
         expect(profiles.update).toHaveBeenCalledWith(
-            "private-access-token",
+            accessToken,
             validForm,
         );
 
