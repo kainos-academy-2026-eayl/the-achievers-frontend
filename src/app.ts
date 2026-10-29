@@ -134,6 +134,20 @@ export function createApp(
 		}
 	});
 
+	app.get("/categories", async (_req: Request, res: Response) => {
+		const title = "Categories | Cue Corner";
+		try {
+			const allProducts = await productService.getAll();
+			res.render("categories", {
+				title,
+				categories: getCategories(allProducts),
+			});
+		} catch (error) {
+			console.error("Failed to load categories", error);
+			res.status(502).render("categories", { title, loadError: true });
+		}
+	});
+
 	app.get("/shop", async (req: Request, res: Response) => {
 		const title = "Shop | Cue Corner";
 		const rawCategory = req.query.category;
