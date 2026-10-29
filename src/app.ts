@@ -3,11 +3,16 @@ import nunjucks from "nunjucks";
 import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
 import { ProductClient } from "./clients/productClient";
+import { ProfileClient } from "./clients/profileClient";
 import {
 	type CartOperations,
 	createCartRouter,
 	readCartId,
 } from "./controllers/cartController";
+import {
+	createProfileRouter,
+	type ProfileOperations,
+} from "./controllers/profileController";
 import { CartService } from "./services/cartService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
@@ -15,7 +20,6 @@ import {
 	getCategories,
 	ProductService,
 } from "./services/productService";
-
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
@@ -30,6 +34,11 @@ export function createApp(
 				process.env.BACKEND_URL ??
 				"http://localhost:3000",
 		),
+	),
+	profileService: ProfileOperations = new ProfileClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	),
 ): Express {
 	const app = express();
@@ -55,7 +64,15 @@ export function createApp(
 	app.use(async (req, res, next) => {
 		if (
 			req.method !== "GET" ||
-			!["/", "/shop", "/registration", "/reset-pass"].includes(req.path)
+			![
+				"/",
+				"/shop",
+				"/login",
+				"/registration",
+				"/reset-pass",
+				"/admin",
+				"/profile",
+			].includes(req.path)
 		) {
 			next();
 			return;
@@ -74,6 +91,29 @@ export function createApp(
 	});
 
 	app.use("/cart", createCartRouter(cartService));
+	app.use("/profile", createProfileRouter(profileService));
+
+	app.get("/admin", async (req: Request, res: Response) => {
+		res.set("Cache-Control", "no-store");
+		if (!req.session.auth) {
+			return res.redirect(303, "/login");
+		}
+		const title = "Admin dashboard | Cue Corner";
+		if (req.session.auth.role !== "admin") {
+			return res.status(403).render("admin", { title, notAllowed: true });
+		}
+		try {
+			const products = await productService.getAll();
+			return res.render("admin", {
+				title,
+				products,
+				categories: getCategories(products),
+			});
+		} catch (error) {
+			console.error("Failed to load admin catalogue overview", error);
+			return res.status(502).render("admin", { title, loadError: true });
+		}
+	});
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
@@ -175,42 +215,40 @@ export function createApp(
 				? safeWordHint
 				: "";
 
-		if (
-			!trimmedName ||
-			!/^[^\s@]+@[^\s@]+$/.test(trimmedEmail) ||
-			typeof password !== "string" ||
-			!password ||
-			typeof confirmPassword !== "string" ||
-			!confirmPassword
-		) {
-			return res.status(400).render("registration", {
-				title: "Register | Cue Corner",
-				registrationError: true,
-				registrationMessage:
-					"Please provide a name, valid email address, password, and password confirmation.",
-				name: trimmedName,
-				email: trimmedEmail,
-				safeWordHint: selectedHint,
-			});
+		const errors: string[] = [];
+		if (!trimmedName) {
+			errors.push("Enter your name.");
+		}
+		if (!trimmedEmail) {
+			errors.push("Enter your email address.");
+		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+			errors.push("Enter a valid email address, for example name@example.com.");
+		}
+		if (typeof password !== "string" || !password) {
+			errors.push("Enter a password.");
+		} else if (password.length < 12) {
+			errors.push("Your password must be at least 12 characters long.");
+		} else if (password.length > 128) {
+			errors.push("Your password must be no more than 128 characters long.");
+		}
+		if (typeof confirmPassword !== "string" || !confirmPassword) {
+			errors.push("Confirm your password.");
+		} else if (password !== confirmPassword) {
+			errors.push("Your passwords do not match.");
+		}
+		if (!selectedHint) {
+			errors.push("Choose a safe word hint.");
+		}
+		if (typeof safeWord !== "string" || !safeWord.trim()) {
+			errors.push("Enter a safe word.");
 		}
 
-		if (password !== confirmPassword) {
+		if (errors.length > 0) {
 			return res.status(400).render("registration", {
 				title: "Register | Cue Corner",
 				registrationError: true,
-				registrationMessage: "Your passwords do not match.",
-				name: trimmedName,
-				email: trimmedEmail,
-				safeWordHint: selectedHint,
-			});
-		}
-
-		if (!selectedHint || typeof safeWord !== "string" || !safeWord.trim()) {
-			return res.status(400).render("registration", {
-				title: "Register | Cue Corner",
-				registrationError: true,
-				registrationMessage:
-					"Please choose a safe word hint and enter a safe word.",
+				registrationMessage: "Please fix the following:",
+				registrationErrors: errors,
 				name: trimmedName,
 				email: trimmedEmail,
 				safeWordHint: selectedHint,
@@ -232,6 +270,18 @@ export function createApp(
 					}),
 				},
 			);
+
+			if (backendResponse.status === 409) {
+				return res.status(409).render("registration", {
+					title: "Register | Cue Corner",
+					registrationError: true,
+					registrationMessage:
+						"An account with this email already exists. Try logging in instead.",
+					name: trimmedName,
+					email: trimmedEmail,
+					safeWordHint: selectedHint,
+				});
+			}
 
 			if (!backendResponse.ok) {
 				console.error(

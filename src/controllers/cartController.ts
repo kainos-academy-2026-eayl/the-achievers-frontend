@@ -117,7 +117,8 @@ export function createCartRouter(service: CartOperations): Router {
 					await service[action](cartId, productId, quantity);
 				}
 				const notices = { add: "added", update: "updated", remove: "removed" };
-				res.redirect(303, `/cart?notice=${notices[action]}`);
+				const query = new URLSearchParams({ notice: notices[action] });
+				res.redirect(303, `/cart?${query.toString()}`);
 			} catch (error) {
 				console.error(`Failed to ${action} cart item`, error);
 				const rejected =

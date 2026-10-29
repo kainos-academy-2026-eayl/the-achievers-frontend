@@ -9,6 +9,11 @@
   <div class="auth-card">
     <h1 id="registration-title">Register</h1>
     <p class="auth-notice" id="registration-notice" role="{{ 'alert' if registrationError else 'status' }}">{{ registrationMessage | default("Your details will be sent to the registration service.") }}</p>
+    {% if registrationErrors %}
+      <ul class="auth-errors">
+        {% for error in registrationErrors %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+    {% endif %}
 
     <form class="auth-form" action="/registration" method="post" aria-describedby="registration-notice">
       <div class="auth-field">
@@ -23,12 +28,13 @@
 
       <div class="auth-field">
         <label for="registration-password">Password</label>
-        <input id="registration-password" name="password" type="password" autocomplete="new-password" required>
+        <input id="registration-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="password-hint" required>
+        <p class="auth-hint" id="password-hint">Must be at least 12 characters. <span class="password-count" id="password-count" aria-live="polite" hidden></span></p>
       </div>
 
       <div class="auth-field">
         <label for="registration-confirm-password">Confirm password</label>
-        <input id="registration-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" required>
+        <input id="registration-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
       </div>
 
       <div class="auth-field">
@@ -54,4 +60,5 @@
     <p class="auth-switch">Already have an account? <a href="/login">Login</a></p>
   </div>
   </section>
+  <script src="/js/password-counter.js" defer></script>
 {% endblock %}

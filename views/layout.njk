@@ -51,6 +51,7 @@
             </a>
             {% if currentUser %}
               <span>Signed in as {{ currentUser.name }}</span>
+              <a class="header-btn" href="/profile">My profile</a>
               <form action="/logout" method="post">
                 <button class="header-btn" type="submit">Logout</button>
               </form>
@@ -67,6 +68,7 @@
           <li><a href="/">Home</a></li>
           <li><a href="/shop">Shop</a></li>
           <li><a href="/categories">Categories</a></li>
+          {% if isAdmin %}<li><a href="/admin">Admin dashboard</a></li>{% endif %}
         </ul>
       </nav>
     </header>
