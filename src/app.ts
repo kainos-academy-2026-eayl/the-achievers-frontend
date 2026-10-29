@@ -63,8 +63,6 @@ export function createApp(
 	);
 
 	app.use(async (req, res, next) => {
-		const destination = req.session.shippingDestination;
-		res.locals.shippingDestination = destination;
 		if (
 			req.method !== "GET" ||
 			![
@@ -83,15 +81,8 @@ export function createApp(
 		res.set("Cache-Control", "no-store");
 		const cartId = readCartId(req);
 		if (cartId) {
-			if (!destination) {
-				res.locals.cartCount = "?";
-				next();
-				return;
-			}
 			try {
-				res.locals.cartCount = (
-					await cartService.get(cartId, destination)
-				).count;
+				res.locals.cartCount = (await cartService.get(cartId)).count;
 			} catch (error) {
 				console.error("Failed to load cart count", error);
 				res.locals.cartCount = "?";
