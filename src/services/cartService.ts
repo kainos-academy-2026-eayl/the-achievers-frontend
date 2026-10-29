@@ -16,7 +16,7 @@ export class CartService {
 			CartClient,
 			"get" | "add" | "update" | "remove"
 		>,
-	) { }
+	) {}
 
 	async get(cartId: string): Promise<CartViewModel> {
 		const data = await this.client.get(cartId);
@@ -96,7 +96,8 @@ export class CartService {
 			items,
 			count,
 			total: currency.format(totalPence / 100),
-			shipping: shippingPence === 0 ? "Free" : currency.format(shippingPence / 100),
+			shipping:
+				shippingPence === 0 ? "Free" : currency.format(shippingPence / 100),
 			grandTotal: currency.format(grandTotalPence / 100),
 		};
 	}

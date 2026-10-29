@@ -20,15 +20,15 @@ export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
 			process.env.API_BASE_URL ??
-			process.env.BACKEND_URL ??
-			"http://localhost:3000",
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
 		),
 	),
 	cartService: CartOperations = new CartService(
 		new CartClient(
 			process.env.API_BASE_URL ??
-			process.env.BACKEND_URL ??
-			"http://localhost:3000",
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
 		),
 	),
 ): Express {
@@ -48,8 +48,8 @@ export function createApp(
 	registerAuth(
 		app,
 		process.env.API_BASE_URL ??
-		process.env.BACKEND_URL ??
-		"http://localhost:3000",
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	);
 
 	app.use(async (req, res, next) => {
@@ -165,13 +165,13 @@ export function createApp(
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
 		const selectedHint =
 			typeof safeWordHint === "string" &&
-				[
-					"mothers-maiden-name",
-					"favourite-movie",
-					"first-pet",
-					"childhood-friend",
-					"holiday",
-				].includes(safeWordHint)
+			[
+				"mothers-maiden-name",
+				"favourite-movie",
+				"first-pet",
+				"childhood-friend",
+				"holiday",
+			].includes(safeWordHint)
 				? safeWordHint
 				: "";
 

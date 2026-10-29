@@ -5,13 +5,13 @@ export class CartApiError extends Error {
 }
 
 export class CartClient {
-	constructor(private readonly baseUrl: string) { }
+	constructor(private readonly baseUrl: string) {}
 
 	private async request(
 		cartId: string,
 		method: string,
 		path: string,
-		body?: { productId: string; quantity: number; } | { quantity: number; },
+		body?: { productId: string; quantity: number } | { quantity: number },
 	): Promise<Response> {
 		const url = new URL(path, this.baseUrl);
 		const response = await fetch(url, {
