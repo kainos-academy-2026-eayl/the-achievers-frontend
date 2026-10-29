@@ -1,25 +1,39 @@
-export const PROFILE_FIELDS = [
-	"name",
-	"email",
-	"phone",
-	"addressLine1",
-	"addressLine2",
-	"city",
-	"postcode",
-] as const;
-
-export type ProfileField = (typeof PROFILE_FIELDS)[number];
-export type Profile = Record<ProfileField, string | null> & {
-	createdAt: string;
+export type Address = {
+	label: string | null;
+	addressLine1: string | null;
+	addressLine2: string | null;
+	city: string | null;
+	postcode: string | null;
 };
-export type ProfileUpdate = Record<ProfileField, string> & {
+
+export type Profile = {
+	name: string;
+	email: string;
+	phone: string | null;
+	createdAt: string;
+	homeAddress: Address | null;
+	otherAddresses: Address[];
+};
+
+export type AddressInput = {
+	label?: string;
+	addressLine1: string;
+	addressLine2: string;
+	city: string;
+	postcode: string;
+};
+
+export type ProfileUpdate = {
+	name: string;
+	email: string;
+	phone: string;
+	homeAddress: AddressInput;
+	otherAddresses: AddressInput[];
 	currentPassword: string;
 };
-export type FieldErrors = Partial<
-	Record<ProfileField | "currentPassword", string>
->;
 
-const errorFields = [...PROFILE_FIELDS, "currentPassword"] as const;
+// Keys match the backend, e.g. "phone", "homeAddress.city", "otherAddresses.1.label".
+export type FieldErrors = Record<string, string>;
 
 export class ProfileApiError extends Error {
 	constructor(
@@ -30,6 +44,24 @@ export class ProfileApiError extends Error {
 	}
 }
 
+const ADDRESS_KEYS = [
+	"label",
+	"addressLine1",
+	"addressLine2",
+	"city",
+	"postcode",
+] as const;
+
+function isNullableString(value: unknown): boolean {
+	return value === null || typeof value === "string";
+}
+
+function isAddress(value: unknown): value is Address {
+	if (typeof value !== "object" || value === null) return false;
+	const data = value as Record<string, unknown>;
+	return ADDRESS_KEYS.every((key) => isNullableString(data[key]));
+}
+
 function isProfile(value: unknown): value is Profile {
 	if (typeof value !== "object" || value === null) return false;
 	const data = value as Record<string, unknown>;
@@ -37,9 +69,10 @@ function isProfile(value: unknown): value is Profile {
 		typeof data.name === "string" &&
 		typeof data.email === "string" &&
 		typeof data.createdAt === "string" &&
-		PROFILE_FIELDS.every(
-			(field) => data[field] === null || typeof data[field] === "string",
-		)
+		isNullableString(data.phone) &&
+		(data.homeAddress === null || isAddress(data.homeAddress)) &&
+		Array.isArray(data.otherAddresses) &&
+		data.otherAddresses.every(isAddress)
 	);
 }
 
@@ -49,9 +82,7 @@ function readFieldErrors(body: unknown): FieldErrors {
 	if (typeof fieldErrors !== "object" || fieldErrors === null) return {};
 	return Object.fromEntries(
 		Object.entries(fieldErrors).filter(
-			([field, message]) =>
-				(errorFields as readonly string[]).includes(field) &&
-				typeof message === "string",
+			([, message]) => typeof message === "string",
 		),
 	);
 }
