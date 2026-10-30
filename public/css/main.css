@@ -244,46 +244,54 @@ ul {
     position: relative;
     display: inline-flex;
     align-items: center;
-    justify-content: center;
-    min-height: 2.75rem;
-    padding: 0 1.25rem;
-    border: 2px solid var(--gold);
-    border-radius: 999px;
-    color: var(--gold);
+    gap: 0.4rem;
+    min-height: 2.5rem;
+    padding: 0 0.75rem;
+    border: 1px solid transparent;
+    border-radius: 4px;
+    color: var(--white);
     background: transparent;
     font: inherit;
+    font-size: 0.95rem;
     font-weight: 600;
     cursor: pointer;
     text-decoration: none;
-    transition: background-color 0.15s ease, color 0.15s ease, transform 0.15s ease;
+    transition: border-color 0.15s ease, color 0.15s ease;
 }
 
-.header-btn:hover {
-    background: var(--gold);
-    color: var(--black);
-    transform: translateY(-2px);
+.header-btn:hover,
+.header-btn:focus-visible {
+    border-color: var(--gold);
+    color: var(--gold);
 }
 
-/* Cart is icon-only; the badge is attached to its top-right corner */
-.cart-link {
-    width: 2.75rem;
+/* Square icon-only button */
+.header-icon {
+    width: 2.5rem;
     padding: 0;
+    justify-content: center;
+}
+
+/* Cart icon with count badge in its top-right corner */
+.cart-icon {
+    position: relative;
+    display: inline-grid;
 }
 
 .cart-count {
     position: absolute;
-    top: -0.45rem;
-    right: -0.45rem;
+    top: -0.35rem;
+    right: -0.4rem;
     display: grid;
     place-items: center;
-    min-width: 1.4rem;
-    height: 1.4rem;
-    padding: 0 0.3rem;
-    border: 2px solid var(--black);
+    min-width: 1rem;
+    height: 1rem;
+    padding: 0 0.2rem;
+    border: 0;
     border-radius: 999px;
-    background: var(--white);
+    background: var(--gold);
     color: var(--black);
-    font-size: 0.75rem;
+    font-size: 0.6rem;
     font-weight: 700;
     line-height: 1;
 }
@@ -400,7 +408,7 @@ ul {
         margin-inline: 0;
     }
 
-    .header-btn:not(.cart-link) {
+    .header-btn:not(.header-icon) {
         padding: 0 1rem;
     }
 
