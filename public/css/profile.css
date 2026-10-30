@@ -61,6 +61,21 @@
     opacity: 0.85;
 }
 
+.profile-credit {
+    display: flex;
+    justify-content: space-between;
+    gap: 0.75rem;
+    margin-bottom: 1rem;
+    padding: 0.75rem;
+    border: 1px solid rgba(255, 255, 255, 0.25);
+    border-radius: 6px;
+    background: var(--green-700);
+}
+
+.profile-credit strong {
+    white-space: nowrap;
+}
+
 .dashboard-nav {
     display: grid;
     gap: 0.25rem;

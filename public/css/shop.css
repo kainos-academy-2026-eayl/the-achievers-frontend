@@ -229,6 +229,16 @@
     background: var(--green-900);
 }
 
+.add-to-cart:disabled {
+    background: var(--grey-600);
+    cursor: not-allowed;
+    opacity: 0.7;
+}
+
+.add-to-cart:disabled:hover {
+    background: var(--grey-600);
+}
+
 /* ===== Star rating ===== */
 .product-rating {
     display: flex;

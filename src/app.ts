@@ -2,6 +2,7 @@ import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
 import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
+import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
 import {
@@ -13,7 +14,9 @@ import {
 	createProfileRouter,
 	type ProfileOperations,
 } from "./controllers/profileController";
+import { createCheckoutRouter } from "./controllers/checkoutController";
 import { CartService } from "./services/cartService";
+import { OrderService } from "./services/orderService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
 	filterByCategory,
@@ -39,6 +42,13 @@ export function createApp(
 		process.env.API_BASE_URL ??
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
+	),
+	orderService: Pick<OrderService, "checkout" | "get"> = new OrderService(
+		new OrderClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
 	),
 ): Express {
 	const app = express();
@@ -92,6 +102,14 @@ export function createApp(
 
 	app.use("/cart", createCartRouter(cartService));
 	app.use("/profile", createProfileRouter(profileService));
+	app.use(
+		createCheckoutRouter(
+			cartService,
+			profileService,
+			orderService,
+			productService,
+		),
+	);
 
 	app.get("/admin", async (req: Request, res: Response) => {
 		res.set("Cache-Control", "no-store");

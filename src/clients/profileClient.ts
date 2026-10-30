@@ -10,6 +10,7 @@ export type Profile = {
 	name: string;
 	email: string;
 	phone: string | null;
+	creditBalance: number;
 	createdAt: string;
 	homeAddress: Address | null;
 	otherAddresses: Address[];
@@ -70,6 +71,9 @@ function isProfile(value: unknown): value is Profile {
 		typeof data.email === "string" &&
 		typeof data.createdAt === "string" &&
 		isNullableString(data.phone) &&
+		typeof data.creditBalance === "number" &&
+		Number.isFinite(data.creditBalance) &&
+		data.creditBalance >= 0 &&
 		(data.homeAddress === null || isAddress(data.homeAddress)) &&
 		Array.isArray(data.otherAddresses) &&
 		data.otherAddresses.every(isAddress)

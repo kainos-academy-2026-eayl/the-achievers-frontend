@@ -13,6 +13,7 @@ const profile: Profile = {
     name: "Customer",
     email: "customer@example.com",
     phone: "07123456789",
+    creditBalance: 100000,
     createdAt: "2026-01-01T00:00:00.000Z",
     homeAddress: {
         label: null,
@@ -121,6 +122,7 @@ describe("Customer profile", () => {
         expect(response.headers["cache-control"]).toBe("no-store");
         expect(response.text).toContain('value="Customer"');
         expect(response.text).toContain('value="07123456789"');
+        expect(response.text).toContain("£100,000.00");
         expect(response.text).toContain("Home address");
         expect(response.text).toMatch(
             /name="home-addressLine1"[^>]*value="1 Cue Street"/,

@@ -72,6 +72,12 @@
                 {% if account.memberSince %}<p class="account-since">Member since {{ account.memberSince }}</p>{% endif %}
               </div>
             </div>
+            {% if creditBalance %}
+              <div class="profile-credit" aria-label="Available account credit">
+                <span>Account credit</span>
+                <strong>{{ creditBalance }}</strong>
+              </div>
+            {% endif %}
             <nav aria-label="Profile sections">
               <ul class="dashboard-nav">
                 <li><a href="#personal">Personal details</a></li>
