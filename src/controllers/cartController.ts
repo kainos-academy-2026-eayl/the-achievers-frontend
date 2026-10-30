@@ -160,12 +160,7 @@ export function createCartRouter(service: CartOperations): Router {
 		const { productId } = req.params;
 
 		if (typeof productId !== "string" || !productId.trim()) {
-			await renderCart(
-				res,
-				cartId,
-				400,
-				"Invalid product ID.",
-			);
+			await renderCart(res, cartId, 400, "Invalid product ID.");
 			return;
 		}
 
@@ -174,12 +169,7 @@ export function createCartRouter(service: CartOperations): Router {
 			const item = cart.items.find((i) => i.productId === productId);
 
 			if (!item) {
-				await renderCart(
-					res,
-					cartId,
-					404,
-					"Product not found in cart.",
-				);
+				await renderCart(res, cartId, 404, "Product not found in cart.");
 				return;
 			}
 
@@ -201,8 +191,7 @@ export function createCartRouter(service: CartOperations): Router {
 		} catch (error) {
 			console.error("Failed to increment cart item", error);
 			const rejected =
-				error instanceof CartApiError &&
-				[400, 404, 409].includes(error.status);
+				error instanceof CartApiError && [400, 404, 409].includes(error.status);
 			await renderCart(
 				res,
 				cartId,
@@ -219,12 +208,7 @@ export function createCartRouter(service: CartOperations): Router {
 		const { productId } = req.params;
 
 		if (typeof productId !== "string" || !productId.trim()) {
-			await renderCart(
-				res,
-				cartId,
-				400,
-				"Invalid product ID.",
-			);
+			await renderCart(res, cartId, 400, "Invalid product ID.");
 			return;
 		}
 
@@ -233,12 +217,7 @@ export function createCartRouter(service: CartOperations): Router {
 			const item = cart.items.find((i) => i.productId === productId);
 
 			if (!item) {
-				await renderCart(
-					res,
-					cartId,
-					404,
-					"Product not found in cart.",
-				);
+				await renderCart(res, cartId, 404, "Product not found in cart.");
 				return;
 			}
 
@@ -260,8 +239,7 @@ export function createCartRouter(service: CartOperations): Router {
 		} catch (error) {
 			console.error("Failed to decrement cart item", error);
 			const rejected =
-				error instanceof CartApiError &&
-				[400, 404, 409].includes(error.status);
+				error instanceof CartApiError && [400, 404, 409].includes(error.status);
 			await renderCart(
 				res,
 				cartId,

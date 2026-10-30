@@ -55,7 +55,14 @@ export function createApp(
 
 	env.addFilter("findBy", (arr: unknown[], key: string, value: unknown) => {
 		if (!Array.isArray(arr)) return null;
-		return arr.find((item) => item && typeof item === "object" && (item as Record<string, unknown>)[key] === value) || null;
+		return (
+			arr.find(
+				(item) =>
+					item &&
+					typeof item === "object" &&
+					(item as Record<string, unknown>)[key] === value,
+			) || null
+		);
 	});
 
 	app.set("view engine", "njk");
