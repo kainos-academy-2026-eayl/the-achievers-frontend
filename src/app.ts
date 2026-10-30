@@ -4,6 +4,7 @@ import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
+import { createAdminRouter } from "./controllers/adminController";
 import {
 	type CartOperations,
 	createCartRouter,
@@ -13,7 +14,7 @@ import {
 	createProfileRouter,
 	type ProfileOperations,
 } from "./controllers/profileController";
-import { requireAdmin, requireAuth } from "./middleware/authMiddleware";
+import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
@@ -37,6 +38,11 @@ export function createApp(
 		),
 	),
 	profileService: ProfileOperations = new ProfileClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+	),
+	adminProducts: Pick<ProductClient, "delete"> = new ProductClient(
 		process.env.API_BASE_URL ??
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
@@ -94,21 +100,7 @@ export function createApp(
 	app.use("/cart", createCartRouter(cartService));
 	app.use("/profile", requireAuth, createProfileRouter(profileService));
 
-	app.get("/admin", requireAdmin, async (_req: Request, res: Response) => {
-		res.set("Cache-Control", "no-store");
-		const title = "Admin dashboard | Cue Corner";
-		try {
-			const products = await productService.getAll();
-			return res.render("admin", {
-				title,
-				products,
-				categories: getCategories(products),
-			});
-		} catch (error) {
-			console.error("Failed to load admin catalogue overview", error);
-			return res.status(502).render("admin", { title, loadError: true });
-		}
-	});
+	app.use("/admin", createAdminRouter(productService, adminProducts));
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";

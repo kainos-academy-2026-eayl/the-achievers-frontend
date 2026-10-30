@@ -21,9 +21,13 @@
     </header>
 
     <aside class="admin-notice" aria-labelledby="admin-availability">
-      <h2 id="admin-availability">Read-only overview</h2>
-      <p>This dashboard uses the public product catalogue. Product editing, order management and user management are not available yet because the backend has no admin endpoints.</p>
+      <h2 id="admin-availability">Catalogue management</h2>
+      <p>You can permanently delete products from the catalogue. Product editing, order management and user management are not available yet.</p>
     </aside>
+
+    {% if deleted %}
+      <p class="admin-notice" role="status">Product deleted successfully.</p>
+    {% endif %}
 
     {% if loadError %}
       <div class="admin-notice" role="alert">
@@ -43,10 +47,10 @@
           <div class="admin-table-scroll" role="region" aria-label="Product catalogue" tabindex="0">
             <table class="admin-table">
               <caption class="visually-hidden">Available products, categories and prices</caption>
-              <thead><tr><th scope="col">Product</th><th scope="col">Category</th><th scope="col">Price</th></tr></thead>
+              <thead><tr><th scope="col">Product</th><th scope="col">Category</th><th scope="col">Price</th><th scope="col">Actions</th></tr></thead>
               <tbody>
                 {% for product in products %}
-                  <tr><th scope="row">{{ product.name }}</th><td>{{ product.category }}</td><td>{{ product.price }}</td></tr>
+                  <tr><th scope="row">{{ product.name }}</th><td>{{ product.category }}</td><td>{{ product.price }}</td><td><a href="{{ product.deletePath }}" aria-label="Delete {{ product.name }}">Delete</a></td></tr>
                 {% endfor %}
               </tbody>
             </table>
