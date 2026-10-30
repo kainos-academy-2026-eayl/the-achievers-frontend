@@ -83,14 +83,38 @@
     font: inherit;
 }
 
-.quantity-form input[type="number"].input-invalid {
-    border-color: #a32626;
-    background-color: #fff9f9;
+.quantity-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
 }
 
-.quantity-controls {
+.quantity-input-group {
     display: flex;
+    align-items: center;
     gap: 0.25rem;
+}
+
+.quantity-input-group label {
+    flex-shrink: 0;
+    margin-right: 0.75rem;
+}
+
+.quantity-display {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-weight: 600;
+    border: 1px solid var(--grey-600);
+    border-radius: 5px;
+    background-color: var(--grey-100);
+    color: var(--grey-700);
+}
+
+.quantity-adjust-form {
+    display: inline;
 }
 
 .btn-quantity-increment,
@@ -130,13 +154,6 @@
     opacity: 0.5;
     cursor: not-allowed;
     background-color: var(--grey-100);
-}
-
-.validation-error {
-    margin-top: 0.5rem;
-    color: #a32626;
-    font-size: 0.85rem;
-    font-weight: 500;
 }
 
 .cart-remove {

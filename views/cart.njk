@@ -5,10 +5,6 @@
   <link rel="stylesheet" href="/css/cart.css">
 {% endblock %}
 
-{% block scripts %}
-  <script src="/js/quantity-control.js" defer></script>
-{% endblock %}
-
 {% block content %}
   <section class="section cart-section" aria-labelledby="cart-title">
     <div class="container">
@@ -49,12 +45,19 @@
                   <h2>{{ item.name }}</h2>
                   <p class="cart-unit-price">{{ item.price }} each</p>
                   <div class="cart-item-actions">
-                    <form action="/cart/items/update" method="post" class="quantity-form">
-                      <input type="hidden" name="productId" value="{{ item.productId }}">
+                    <div class="quantity-wrapper" role="group" aria-label="Quantity controls for {{ item.name }}">
                       <label for="quantity-{{ loop.index }}">Quantity<span class="visually-hidden"> for {{ item.name }}</span></label>
-                      <input id="quantity-{{ loop.index }}" type="number" name="quantity" min="1" max="99" step="1" value="{{ item.quantity }}" required>
-                      <button class="btn btn-green btn-small" type="submit" aria-label="Update quantity for {{ item.name }}">Update</button>
-                    </form>
+                      <div class="quantity-input-group">
+                        {% set itemState = itemStates | findBy("productId", item.productId) %}
+                        <form action="/cart/items/adjust/{{ item.productId }}/decrement" method="post" class="quantity-adjust-form">
+                          <button type="submit" class="btn-quantity-decrement" {% if not itemState.canDecrement %}disabled{% endif %} aria-label="Decrease quantity for {{ item.name }}">−</button>
+                        </form>
+                        <span class="quantity-display" aria-live="polite" aria-atomic="true">{{ item.quantity }}</span>
+                        <form action="/cart/items/adjust/{{ item.productId }}/increment" method="post" class="quantity-adjust-form">
+                          <button type="submit" class="btn-quantity-increment" {% if not itemState.canIncrement %}disabled{% endif %} aria-label="Increase quantity for {{ item.name }}">+</button>
+                        </form>
+                      </div>
+                    </div>
                     <form action="/cart/items/remove" method="post">
                       <input type="hidden" name="productId" value="{{ item.productId }}">
                       <button type="submit" class="cart-remove" aria-label="Remove {{ item.name }} from cart">Remove</button>

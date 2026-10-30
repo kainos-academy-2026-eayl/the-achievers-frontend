@@ -46,12 +46,18 @@ export function createApp(
 	app.use(express.static("public"));
 	app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 
-	nunjucks.configure("views", {
+	const env = nunjucks.configure("views", {
 		autoescape: true,
 		express: app,
 		// tsx watch only restarts on .ts changes, so templates must not be cached in dev.
 		noCache: process.env.NODE_ENV !== "production",
 	});
+
+	env.addFilter("findBy", (arr: unknown[], key: string, value: unknown) => {
+		if (!Array.isArray(arr)) return null;
+		return arr.find((item) => item && typeof item === "object" && (item as Record<string, unknown>)[key] === value) || null;
+	});
+
 	app.set("view engine", "njk");
 
 	registerAuth(
