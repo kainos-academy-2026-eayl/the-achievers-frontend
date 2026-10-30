@@ -32,6 +32,18 @@ describe("GET /shop", () => {
         expect(response.text).toContain("2 results");
     });
 
+    it("includes the add to cart confirmation modal", async () => {
+        const response = await request(appWithProducts([validProduct])).get(
+            "/shop",
+        );
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain('id="add-to-cart-modal"');
+        expect(response.text).toContain("Add to Cart?");
+        expect(response.text).toContain('data-product-name');
+        expect(response.text).toContain('src="/js/cart-confirmation.js"');
+    });
+
     it("displays name, description, category and price", async () => {
         const response = await request(appWithProducts([validProduct])).get(
             "/shop",
