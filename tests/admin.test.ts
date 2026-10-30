@@ -1,6 +1,7 @@
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
+import { ProductClient } from "../src/clients/productClient";
 import { ProductService } from "../src/services/productService";
 
 const credentials = { email: "admin@example.com", password: "Password123!" };
@@ -25,20 +26,21 @@ function token(overrides: Record<string, unknown> = {}) {
 }
 
 function mockLogin(accessToken = token()) {
-	return vi.spyOn(globalThis, "fetch").mockResolvedValue(
-		new Response(
-			JSON.stringify({
-				accessToken,
-				tokenType: "Bearer",
-				expiresIn: 3600,
-				user: {
-					...credentials,
-					name: "Admin <script>alert(1)</script>",
-					createdAt: "2026-01-01T00:00:00Z",
-				},
-			}),
-			{ headers: { "Content-Type": "application/json" } },
-		),
+	return vi.spyOn(globalThis, "fetch").mockImplementation(
+		async () =>
+			new Response(
+				JSON.stringify({
+					accessToken,
+					tokenType: "Bearer",
+					expiresIn: 3600,
+					user: {
+						...credentials,
+						name: "Admin <script>alert(1)</script>",
+						createdAt: "2026-01-01T00:00:00Z",
+					},
+				}),
+				{ headers: { "Content-Type": "application/json" } },
+			),
 	);
 }
 
@@ -48,6 +50,207 @@ function appWithProducts(products: unknown = [product]) {
 
 afterEach(() => {
 	vi.restoreAllMocks();
+});
+
+describe("Admin product deletion", () => {
+	function setup() {
+		const accessToken = token();
+		const fetchSpy = mockLogin(accessToken);
+		const getAll = vi.fn().mockResolvedValue([product]);
+		const app = createApp(
+			new ProductService({ getAll }),
+			undefined,
+			undefined,
+			undefined,
+			new ProductClient("http://backend.test"),
+		);
+		return { app, agent: request.agent(app), fetchSpy, getAll, accessToken };
+	}
+
+	function readCsrf(html: string): string {
+		const csrfToken = html.match(/name="csrfToken" value="([a-f0-9]+)"/)?.[1];
+		if (!csrfToken) throw new Error("Missing deletion confirmation CSRF token");
+		return csrfToken;
+	}
+
+	async function confirm(agent: ReturnType<typeof request.agent>) {
+		await agent.post("/login").type("form").send(credentials).expect(303);
+		const page = await agent.get("/admin/products/p1/delete").expect(200);
+		return readCsrf(page.text);
+	}
+
+	it("shows a confirmation and cancel option without deleting on GET", async () => {
+		const { agent, fetchSpy, accessToken } = setup();
+		const csrfToken = await confirm(agent);
+		expect(csrfToken).toHaveLength(64);
+		const page = await agent.get("/admin/products/p1/delete").expect(200);
+		expect(page.headers["cache-control"]).toBe("no-store");
+		expect(page.text).toContain("Maple Cue");
+		expect(page.text).toContain("all shopping carts");
+		expect(page.text).toContain("cannot be undone");
+		expect(page.text).toContain('href="/admin">Cancel');
+		expect(page.text).not.toContain(accessToken);
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+		const dashboard = await agent.get("/admin").expect(200);
+		expect(dashboard.text).toContain('href="/admin/products/p1/delete"');
+	});
+
+	it("forwards the session token, deletes and refreshes the catalogue and shop", async () => {
+		const { agent, fetchSpy, getAll, accessToken } = setup();
+		const csrfToken = await confirm(agent);
+		fetchSpy.mockImplementation(async () => {
+			getAll.mockResolvedValue([]);
+			return new Response(null, { status: 204 });
+		});
+		await agent
+			.post("/admin/products/p1/delete")
+			.type("form")
+			.send({ csrfToken })
+			.expect(303)
+			.expect("Location", "/admin?deleted=1");
+		expect(fetchSpy).toHaveBeenLastCalledWith(
+			new URL("http://backend.test/api/products/p1"),
+			expect.objectContaining({
+				method: "DELETE",
+				headers: { Authorization: `Bearer ${accessToken}` },
+				signal: expect.any(AbortSignal),
+			}),
+		);
+		const dashboard = await agent.get("/admin?deleted=1").expect(200);
+		expect(dashboard.text).toContain("Product deleted successfully.");
+		expect(dashboard.text).toContain("<dt>Products</dt><dd>0</dd>");
+		expect(dashboard.text).not.toContain("Maple Cue");
+		expect((await agent.get("/shop").expect(200)).text).not.toContain(
+			"Maple Cue",
+		);
+	});
+
+	it.each(["get", "post"] as const)(
+		"blocks anonymous %s requests",
+		async (method) => {
+			const { app, fetchSpy, getAll } = setup();
+			await request(app)
+				[method]("/admin/products/p1/delete")
+				.expect(303)
+				.expect("Location", "/login");
+			expect(fetchSpy).not.toHaveBeenCalled();
+			expect(getAll).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each(["get", "post"] as const)(
+		"blocks non-admin %s requests",
+		async (method) => {
+			const { agent, fetchSpy, getAll } = setup();
+			mockLogin(token({ role: "user" }));
+			await agent.post("/login").type("form").send(credentials).expect(303);
+			await agent[method]("/admin/products/p1/delete").expect(403);
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+			expect(getAll).not.toHaveBeenCalled();
+		},
+	);
+
+	it.each([{}, { csrfToken: "incorrect" }, { csrfToken: ["a", "b"] }])(
+		"rejects invalid CSRF confirmation %j without calling the backend",
+		async (body) => {
+			const { agent, fetchSpy } = setup();
+			await confirm(agent);
+			vi.spyOn(console, "warn").mockImplementation(() => {});
+			const response = await agent
+				.post("/admin/products/p1/delete")
+				.type("form")
+				.send(body)
+				.expect(403);
+			expect(response.text).toContain("Invalid confirmation");
+			expect(fetchSpy).toHaveBeenCalledTimes(1);
+		},
+	);
+
+	it("does not accept a different admin session's CSRF token", async () => {
+		const { app, agent, fetchSpy } = setup();
+		const csrfToken = await confirm(agent);
+		const other = request.agent(app);
+		await confirm(other);
+		vi.spyOn(console, "warn").mockImplementation(() => {});
+		await other
+			.post("/admin/products/p1/delete")
+			.type("form")
+			.send({ csrfToken })
+			.expect(403);
+		expect(fetchSpy).toHaveBeenCalledTimes(2);
+	});
+
+	it("returns 404 before confirmation when the product has disappeared", async () => {
+		const { agent, getAll, fetchSpy } = setup();
+		await agent.post("/login").type("form").send(credentials).expect(303);
+		getAll.mockResolvedValue([]);
+		const response = await agent.get("/admin/products/p1/delete").expect(404);
+		expect(response.text).toContain("Product not found");
+		expect(fetchSpy).toHaveBeenCalledTimes(1);
+	});
+
+	it.each([401, 403, 404, 500, 200])(
+		"handles backend status %s without claiming success",
+		async (status) => {
+			const { agent, fetchSpy } = setup();
+			const csrfToken = await confirm(agent);
+			fetchSpy.mockResolvedValue(new Response(null, { status }));
+			vi.spyOn(console, "error").mockImplementation(() => {});
+			const response = await agent
+				.post("/admin/products/p1/delete")
+				.type("form")
+				.send({ csrfToken })
+				.expect(
+					status === 401
+						? 303
+						: status === 403 || status === 404
+							? status
+							: 502,
+				);
+			expect(response.text).not.toContain("Product deleted successfully.");
+			if (status === 401) {
+				expect(response.headers.location).toBe("/login");
+				await agent.get("/admin").expect(303).expect("Location", "/login");
+			} else if (status === 403) {
+				expect(response.text).toContain("Not allowed");
+			} else if (status === 404) {
+				expect(response.text).toContain("Product not found");
+			} else {
+				expect(response.text).toContain("Unable to delete");
+			}
+		},
+	);
+
+	it("shows a retryable error for network failures", async () => {
+		const { agent, fetchSpy } = setup();
+		const csrfToken = await confirm(agent);
+		fetchSpy.mockRejectedValue(new Error("network unavailable"));
+		const logger = vi.spyOn(console, "error").mockImplementation(() => {});
+		const response = await agent
+			.post("/admin/products/p1/delete")
+			.type("form")
+			.send({ csrfToken })
+			.expect(502);
+		expect(response.text).toContain("Unable to delete");
+		expect(logger).toHaveBeenCalled();
+	});
+
+	it("escapes product details and safely encodes IDs in deletion links", async () => {
+		const { agent, getAll } = setup();
+		getAll.mockResolvedValue([
+			{ ...product, id: "cue/with?characters", name: "<script>bad()</script>" },
+		]);
+		await agent.post("/login").type("form").send(credentials).expect(303);
+		const dashboard = await agent.get("/admin").expect(200);
+		expect(dashboard.text).toContain(
+			"/admin/products/cue%2Fwith%3Fcharacters/delete",
+		);
+		const confirmation = await agent
+			.get("/admin/products/cue%2Fwith%3Fcharacters/delete")
+			.expect(200);
+		expect(confirmation.text).toContain("&lt;script&gt;");
+		expect(confirmation.text).not.toContain("<script>bad()");
+	});
 });
 
 describe("Admin dashboard", () => {
@@ -82,7 +285,7 @@ describe("Admin dashboard", () => {
 		expect(response.text).toContain("Maple Cue");
 		expect(response.text).toContain("Cue Case");
 		expect(response.text).toContain("£89.99");
-		expect(response.text).toContain("Read-only overview");
+		expect(response.text).toContain("Catalogue management");
 		expect(response.text).toContain('href="/admin">Admin dashboard</a>');
 		expect(response.text).not.toContain("<script>");
 		expect(response.text).toContain("&lt;script&gt;");
