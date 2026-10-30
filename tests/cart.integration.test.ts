@@ -110,7 +110,7 @@ describe.skipIf(!backendUrl)("Shopping cart with the real backend", () => {
         expect(updated.text).toContain("Cart, 4 items");
     });
 
-    it("charges £4.99 shipping on a cart below £50", async () => {
+    it("charges £4.99 shipping on a cart below £200", async () => {
         const customer = shopper();
         await add(customer, cueCase, 1);
         const cart = await customer.get("/cart");
@@ -118,28 +118,28 @@ describe.skipIf(!backendUrl)("Shopping cart with the real backend", () => {
         expect(cart.text).toContain(totalLine("£54.98"));
     });
 
-    it("moves from £4.99 to free shipping as the subtotal crosses £50", async () => {
+    it("moves from £4.99 to free shipping as the subtotal crosses £200", async () => {
         const customer = shopper();
+        await add(customer, cue, 2);
+        await add(customer, cue, 1);
         await add(customer, chalk, 1);
-        await add(customer, tableCover, 1);
         const below = await customer.get("/cart");
-        expect(below.text).toContain("£49.98");
+        expect(below.text).toContain("£199.96");
         expect(below.text).toContain(shippingLine("£4.99"));
-        expect(below.text).toContain(totalLine("£54.97"));
+        expect(below.text).toContain(totalLine("£204.95"));
 
         await add(customer, cueBall, 1);
         const above = await customer.get("/cart");
         expect(above.text).toContain(shippingLine("Free"));
-        expect(above.text).toContain(totalLine("£62.97"));
+        expect(above.text).toContain(totalLine("£217.95"));
     });
 
-    it("restores shipping when removing items drops the subtotal below £50", async () => {
+    it("restores shipping when removing items drops the subtotal below £200", async () => {
         const customer = shopper();
-        await add(customer, cue, 1);
-        await add(customer, chalk, 1);
+        await add(customer, cue, 3);
         const both = await customer.get("/cart");
         expect(both.text).toContain(shippingLine("Free"));
-        expect(both.text).toContain(totalLine("£104.98"));
+        expect(both.text).toContain(totalLine("£269.97"));
 
         await customer
             .post("/cart/items/remove")
@@ -147,9 +147,9 @@ describe.skipIf(!backendUrl)("Shopping cart with the real backend", () => {
             .send({ productId: cue })
             .expect(303);
         const remaining = await customer.get("/cart");
-        expect(remaining.text).not.toContain("Pro Series Maple Cue");
+        expect(remaining.text).toContain("Pro Series Maple Cue");
         expect(remaining.text).toContain(shippingLine("£4.99"));
-        expect(remaining.text).toContain(totalLine("£19.98"));
+        expect(remaining.text).toContain(totalLine("£184.97"));
 
         await customer
             .post("/cart/items/remove")
@@ -191,6 +191,7 @@ describe.skipIf(!backendUrl)("Shopping cart with the real backend", () => {
         "abc",
         "",
         "1e2",
+        "100",
         "2147483648",
         "9007199254740992",
     ])("rejects invalid quantity %s and leaves the cart unchanged", async (quantity) => {
@@ -205,6 +206,19 @@ describe.skipIf(!backendUrl)("Shopping cart with the real backend", () => {
         expect((await customer.get("/cart")).text).toContain("Cart, 1 items");
     });
 
+    it("accepts valid boundary quantities 1 and 99", async () => {
+        const customer = shopper();
+        const added1 = await add(customer, cueBall, 1);
+        expect(added1.status).toBe(303);
+        const cart1 = await customer.get("/cart");
+        expect(cart1.text).toContain("Cart, 1 items");
+
+        const added99 = await add(customer, cueCase, 99);
+        expect(added99.status).toBe(303);
+        const cart99 = await customer.get("/cart");
+        expect(cart99.text).toContain("Cart, 100 items");
+    });
+
     it("rejects a missing product ID", async () => {
         const response = await shopper()
             .post("/cart/items/add")
@@ -213,14 +227,31 @@ describe.skipIf(!backendUrl)("Shopping cart with the real backend", () => {
         expect(response.status).toBe(400);
     });
 
-    it("accepts the backend's maximum quantity and advertises it in the form", async () => {
+    it("accepts the backend's maximum quantity of 99 and advertises it in the form", async () => {
         const customer = shopper();
-        const response = await add(customer, cue, 2147483647);
+        const response = await add(customer, cue, 99);
         expect(response.status).toBe(303);
         const cart = await customer.get("/cart");
         expect(cart.status).toBe(200);
-        expect(cart.text).toContain('max="2147483647"');
+        expect(cart.text).toContain('max="99"');
         expect(cart.text).toContain(shippingLine("Free"));
+    });
+
+    it("rejects quantity 100 and shows a backend error", async () => {
+        const customer = shopper();
+        const response = await add(customer, cue, 100);
+        expect(response.status).toBe(400);
+        expect(response.text).toContain("quantity may exceed the cart limit");
+    });
+
+    it("handles adding units that would exceed 99 total", async () => {
+        const customer = shopper();
+        await add(customer, cue, 50);
+        const result = await add(customer, cue, 60);
+        expect(result.status).toBe(400);
+        expect(result.text).toContain("quantity may exceed the cart limit");
+        const cart = await customer.get("/cart");
+        expect(cart.text).toContain("Cart, 50 items");
     });
 
     it("shows a rejected change when the backend returns 404 or 409", async () => {

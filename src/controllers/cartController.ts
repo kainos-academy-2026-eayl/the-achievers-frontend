@@ -8,7 +8,7 @@ export type CartOperations = Pick<
 	"get" | "add" | "update" | "remove"
 >;
 
-const MAX_CART_QUANTITY = 2_147_483_647;
+const MAX_CART_QUANTITY = 99;
 
 export function readCartId(req: Request): string | undefined {
 	const value = req.headers.cookie

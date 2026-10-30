@@ -83,6 +83,62 @@
     font: inherit;
 }
 
+.quantity-form input[type="number"].input-invalid {
+    border-color: #a32626;
+    background-color: #fff9f9;
+}
+
+.quantity-controls {
+    display: flex;
+    gap: 0.25rem;
+}
+
+.btn-quantity-increment,
+.btn-quantity-decrement {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--grey-600);
+    border-radius: 5px;
+    background: var(--white);
+    color: var(--grey-700);
+    font: inherit;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms ease-in-out;
+}
+
+.btn-quantity-increment:hover:not(:disabled),
+.btn-quantity-decrement:hover:not(:disabled) {
+    background-color: var(--grey-100);
+    border-color: var(--green-700);
+    color: var(--green-700);
+}
+
+.btn-quantity-increment:active:not(:disabled),
+.btn-quantity-decrement:active:not(:disabled) {
+    background-color: var(--green-700);
+    color: var(--white);
+}
+
+.btn-quantity-increment:disabled,
+.btn-quantity-decrement:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--grey-100);
+}
+
+.validation-error {
+    margin-top: 0.5rem;
+    color: #a32626;
+    font-size: 0.85rem;
+    font-weight: 500;
+}
+
 .cart-remove {
     background: none;
     border: 0;
