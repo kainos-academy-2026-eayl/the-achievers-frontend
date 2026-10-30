@@ -109,8 +109,8 @@ export function createApp(
 
 	app.use("/cart", createCartRouter(cartService));
 	app.use("/profile", requireAuth, createProfileRouter(profileService));
+	app.use(["/checkout", "/orders"], requireAuth);
 	app.use(
-		requireAuth,
 		createCheckoutRouter(
 			cartService,
 			profileService,

@@ -141,13 +141,18 @@ const validPayment = {
 afterEach(() => vi.restoreAllMocks());
 
 describe("Checkout and order placement", () => {
-    it("requires a logged-in customer", async () => {
+    it.each([
+        ["get", "/checkout"],
+        ["post", "/checkout"],
+        ["get", "/orders/order-123"],
+    ] as const)("requires a logged-in customer for %s %s", async (method, path) => {
         const { agent, orders } = setup();
-        const response = await agent.get("/checkout");
+        const response = await agent[method](path);
 
         expect(response.status).toBe(303);
         expect(response.headers.location).toBe("/login");
         expect(orders.checkout).not.toHaveBeenCalled();
+        expect(orders.get).not.toHaveBeenCalled();
     });
 
     it("prefills the saved address and explains the demo card", async () => {
