@@ -2,6 +2,7 @@ import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
 import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
+import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
 import { createAdminRouter } from "./controllers/adminController";
@@ -14,8 +15,11 @@ import {
 	createProfileRouter,
 	type ProfileOperations,
 } from "./controllers/profileController";
+import { createCheckoutRouter } from "./controllers/checkoutController";
 import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
+import { CheckoutService } from "./services/checkoutService";
+import { OrderService } from "./services/orderService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
 	filterByCategory,
@@ -42,11 +46,19 @@ export function createApp(
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
 	),
+	orderService: Pick<OrderService, "checkout" | "get"> = new OrderService(
+		new OrderClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
+	),
 	adminProducts: Pick<ProductClient, "delete"> = new ProductClient(
 		process.env.API_BASE_URL ??
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
 	),
+	checkoutService: CheckoutService = new CheckoutService(),
 ): Express {
 	const app = express();
 
@@ -112,6 +124,16 @@ export function createApp(
 
 	app.use("/cart", createCartRouter(cartService));
 	app.use("/profile", requireAuth, createProfileRouter(profileService));
+	app.use(["/checkout", "/orders"], requireAuth);
+	app.use(
+		createCheckoutRouter(
+			cartService,
+			profileService,
+			orderService,
+			productService,
+			checkoutService,
+		),
+	);
 
 	app.use("/admin", createAdminRouter(productService, adminProducts));
 

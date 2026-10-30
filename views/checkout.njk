@@ -1,0 +1,129 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/checkout.css">
+{% endblock %}
+{% block content %}
+  <section class="checkout-page" aria-labelledby="checkout-title">
+    <div class="container">
+      <a class="checkout-back" href="/cart">Back to cart</a>
+      <h1 id="checkout-title">Checkout</h1>
+
+      {% if formError %}<p class="checkout-error" role="alert">{{ formError }}</p>{% endif %}
+
+      {% if loadError %}
+        <div class="checkout-message" role="alert">
+          <h2>Checkout is unavailable</h2>
+          <p>We couldn't load your cart or saved address. Please try again.</p>
+          <a class="btn btn-gold" href="/cart">Return to cart</a>
+        </div>
+      {% elif not cart.items.length %}
+        <div class="checkout-message" role="status">
+          <h2>Your cart is empty</h2>
+          <p>Add items to your cart before placing an order.</p>
+          <a class="btn btn-gold" href="/shop">Browse products</a>
+        </div>
+      {% else %}
+        <div class="checkout-layout">
+          <form action="/checkout" method="post" class="checkout-form">
+            <section class="checkout-section" aria-labelledby="shipping-title">
+              <h2 id="shipping-title">Shipping address</h2>
+              {% if savedAddresses.length %}
+                <fieldset id="saved-address-options" class="saved-address-options">
+                  <legend>Choose one saved address</legend>
+                  {% if fieldErrors.addressChoice %}<p class="checkout-field-error" id="address-choice-error" role="alert">{{ fieldErrors.addressChoice }}</p>{% endif %}
+                  {% for address in savedAddresses %}
+                    <label class="saved-address-option" for="address-{{ address.id }}">
+                      <input id="address-{{ address.id }}" type="radio" name="addressChoice" value="{{ address.id }}"{% if address.id == selectedAddressId %} checked{% endif %}>
+                      <span class="saved-address-content">
+                        <strong>{{ address.label }}</strong>
+                        <span>{{ address.addressLine1 }}{% if address.addressLine2 %}, {{ address.addressLine2 }}{% endif %}, {{ address.city }}, {{ address.postcode }}</span>
+                      </span>
+                    </label>
+                  {% endfor %}
+                </fieldset>
+              {% else %}
+                <p class="checkout-note">No complete address is saved to your profile. Enter an address for this order.</p>
+                {% if fieldErrors.addressChoice %}<p class="checkout-field-error" role="alert">{{ fieldErrors.addressChoice }}</p>{% endif %}
+              {% endif %}
+
+              <details class="different-address-disclosure"{% if useDifferentAddress %} open{% endif %}>
+                <summary>Enter a different address</summary>
+                <label class="different-address-toggle" for="use-different-address">
+                  <input id="use-different-address" type="checkbox" name="useDifferentAddress" value="yes"{% if useDifferentAddress %} checked{% endif %}>
+                  Use this address for this order
+                </label>
+                <p class="checkout-note">A different address is used for this order only and won't change your profile.</p>
+                <fieldset id="different-address-fields" class="checkout-address-fields">
+                <div class="checkout-field">
+                  <label for="different-address-line1">Address line 1</label>
+                  {% if fieldErrors.addressLine1 %}<p class="checkout-field-error" id="address-line1-error">{{ fieldErrors.addressLine1 }}</p>{% endif %}
+                  <input id="different-address-line1" name="differentAddressLine1" autocomplete="shipping address-line1" maxlength="100" value="{{ values.addressLine1 }}"{% if fieldErrors.addressLine1 %} aria-invalid="true" aria-describedby="address-line1-error"{% endif %}>
+                </div>
+                <div class="checkout-field">
+                  <label for="different-address-line2">Address line 2 <span class="optional">(optional)</span></label>
+                  <input id="different-address-line2" name="differentAddressLine2" autocomplete="shipping address-line2" maxlength="100" value="{{ values.addressLine2 }}">
+                </div>
+                <div class="checkout-field">
+                  <label for="different-city">Town or city</label>
+                  {% if fieldErrors.city %}<p class="checkout-field-error" id="city-error">{{ fieldErrors.city }}</p>{% endif %}
+                  <input id="different-city" name="differentCity" autocomplete="shipping address-level2" maxlength="60" value="{{ values.city }}"{% if fieldErrors.city %} aria-invalid="true" aria-describedby="city-error"{% endif %}>
+                </div>
+                <div class="checkout-field">
+                  <label for="different-postcode">Postcode</label>
+                  {% if fieldErrors.postcode %}<p class="checkout-field-error" id="postcode-error">{{ fieldErrors.postcode }}</p>{% endif %}
+                  <input id="different-postcode" name="differentPostcode" autocomplete="shipping postal-code" maxlength="10" value="{{ values.postcode }}"{% if fieldErrors.postcode %} aria-invalid="true" aria-describedby="postcode-error"{% endif %}>
+                </div>
+                </fieldset>
+              </details>
+            </section>
+
+            <section class="checkout-section" aria-labelledby="payment-title">
+              <h2 id="payment-title">Payment</h2>
+              <p class="demo-card-hint" role="note">
+                Demo payment only. Use card number <strong>4242 4242 4242 4242</strong>, expiry <strong>12/34</strong>, and security code <strong>123</strong>.
+              </p>
+              {% if fieldErrors.cardDetails %}<p class="checkout-field-error" id="card-details-error" role="alert">{{ fieldErrors.cardDetails }}</p>{% endif %}
+              <div class="checkout-card-fields">
+                <div class="checkout-field checkout-card-number">
+                  <label for="card-number">Card number</label>
+                  <input id="card-number" name="cardNumber" type="text" inputmode="numeric" autocomplete="off" maxlength="19" pattern="[0-9 ]{16,19}" required{% if fieldErrors.cardDetails %} aria-invalid="true" aria-describedby="card-details-error"{% endif %}>
+                </div>
+                <div class="checkout-field">
+                  <label for="card-expiry">Expiry</label>
+                  <input id="card-expiry" name="cardExpiry" type="text" inputmode="numeric" autocomplete="off" maxlength="5" pattern="[0-9]{2}/[0-9]{2}" placeholder="MM/YY" required>
+                </div>
+                <div class="checkout-field">
+                  <label for="card-cvc">Security code</label>
+                  <input id="card-cvc" name="cardCvc" type="password" inputmode="numeric" autocomplete="off" maxlength="3" pattern="[0-9]{3}" required>
+                </div>
+              </div>
+            </section>
+
+            <button type="submit" class="btn btn-green place-order-button">Place order</button>
+          </form>
+
+          <aside class="checkout-summary" aria-labelledby="summary-title">
+            <div class="credit-balance-panel" aria-label="Available account credit">
+              <span>Available account credit</span>
+              <strong>{{ creditBalance }}</strong>
+              <p>Your order total will be deducted after successful placement.</p>
+            </div>
+            <h2 id="summary-title">Order summary</h2>
+            <ul class="checkout-items">
+              {% for item in cart.items %}
+                <li>
+                  <span>{{ item.quantity }} × {{ item.name }}</span>
+                  <strong>{{ item.subtotal }}</strong>
+                </li>
+              {% endfor %}
+            </ul>
+            <div class="checkout-total"><span>Subtotal</span><strong>{{ cart.total }}</strong></div>
+            <div class="checkout-total"><span>Shipping</span><strong>{{ cart.shipping }}</strong></div>
+            <div class="checkout-total checkout-grand-total"><span>Total</span><strong>{{ cart.grandTotal }}</strong></div>
+          </aside>
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

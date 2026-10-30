@@ -61,6 +61,7 @@ describe("Admin product deletion", () => {
 			new ProductService({ getAll }),
 			undefined,
 			undefined,
+			undefined,
 			new ProductClient("http://backend.test"),
 		);
 		return { app, agent: request.agent(app), fetchSpy, getAll, accessToken };
