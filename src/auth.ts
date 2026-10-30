@@ -18,6 +18,7 @@ interface LoginResponse {
 
 declare module "express-session" {
 	interface SessionData {
+		adminCsrfToken?: string;
 		auth?: {
 			accessToken: string;
 			user: LoginUser;
@@ -27,7 +28,7 @@ declare module "express-session" {
 	}
 }
 
-function readLoginClaims(token: string): {
+export function readLoginClaims(token: string): {
 	role: "admin" | "user";
 	expiresAt: number;
 } {

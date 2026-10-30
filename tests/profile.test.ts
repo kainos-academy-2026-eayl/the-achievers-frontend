@@ -54,6 +54,22 @@ const validForm = {
     currentPassword: "CurrentPassword123",
 };
 
+function token(overrides: Record<string, unknown> = {}) {
+	const claims = {
+		sub: "1",
+		iss: "the-achievers-backend",
+		aud: "the-achievers-api",
+		role: "user",
+		exp: Math.floor(Date.now() / 1000) + 3600,
+		...overrides,
+	};
+	const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+	const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+	return `${header}.${payload}.test-signature`;
+}
+
+const accessToken = token();
+
 function setup() {
     const profiles = {
         get: vi.fn(async (_token: string) => profile),
@@ -75,16 +91,6 @@ function setup() {
     );
     return { app, profiles, agent: request.agent(app) };
 }
-
-const accessToken = `header.${Buffer.from(
-    JSON.stringify({
-        sub: "1",
-        iss: "the-achievers-backend",
-        aud: "the-achievers-api",
-        role: "user",
-        exp: Math.floor(Date.now() / 1000) + 3600,
-    }),
-).toString("base64url")}.test-signature`;
 
 async function logIn(agent: ReturnType<typeof request.agent>) {
     vi.spyOn(globalThis, "fetch").mockResolvedValueOnce(
@@ -160,9 +166,8 @@ describe("Customer profile", () => {
             await request(app).get("/profile"),
             await request(app).post("/profile").type("form").send(validForm),
         ]) {
-            expect(response.status).toBe(401);
-            expect(response.text).toContain("Please log in to view your profile.");
-            expect(response.text).toContain('href="/login"');
+            expect(response.status).toBe(303);
+            expect(response.headers.location).toBe("/login");
         }
         expect(profiles.get).not.toHaveBeenCalled();
         expect(profiles.update).not.toHaveBeenCalled();

@@ -5,6 +5,7 @@ import { CartClient } from "./clients/cartClient";
 import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
+import { createAdminRouter } from "./controllers/adminController";
 import {
 	type CartOperations,
 	createCartRouter,
@@ -15,6 +16,7 @@ import {
 	type ProfileOperations,
 } from "./controllers/profileController";
 import { createCheckoutRouter } from "./controllers/checkoutController";
+import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
 import { CheckoutService } from "./services/checkoutService";
 import { OrderService } from "./services/orderService";
@@ -51,6 +53,11 @@ export function createApp(
 			"http://localhost:3000",
 		),
 	),
+	adminProducts: Pick<ProductClient, "delete"> = new ProductClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+	),
 	checkoutService: CheckoutService = new CheckoutService(),
 ): Express {
 	const app = express();
@@ -58,12 +65,25 @@ export function createApp(
 	app.use(express.static("public"));
 	app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 
-	nunjucks.configure("views", {
+	const env = nunjucks.configure("views", {
 		autoescape: true,
 		express: app,
 		// tsx watch only restarts on .ts changes, so templates must not be cached in dev.
 		noCache: process.env.NODE_ENV !== "production",
 	});
+
+	env.addFilter("findBy", (arr: unknown[], key: string, value: unknown) => {
+		if (!Array.isArray(arr)) return null;
+		return (
+			arr.find(
+				(item) =>
+					item &&
+					typeof item === "object" &&
+					(item as Record<string, unknown>)[key] === value,
+			) || null
+		);
+	});
+
 	app.set("view engine", "njk");
 
 	registerAuth(
@@ -103,7 +123,8 @@ export function createApp(
 	});
 
 	app.use("/cart", createCartRouter(cartService));
-	app.use("/profile", createProfileRouter(profileService));
+	app.use("/profile", requireAuth, createProfileRouter(profileService));
+	app.use(["/checkout", "/orders"], requireAuth);
 	app.use(
 		createCheckoutRouter(
 			cartService,
@@ -114,27 +135,7 @@ export function createApp(
 		),
 	);
 
-	app.get("/admin", async (req: Request, res: Response) => {
-		res.set("Cache-Control", "no-store");
-		if (!req.session.auth) {
-			return res.redirect(303, "/login");
-		}
-		const title = "Admin dashboard | Cue Corner";
-		if (req.session.auth.role !== "admin") {
-			return res.status(403).render("admin", { title, notAllowed: true });
-		}
-		try {
-			const products = await productService.getAll();
-			return res.render("admin", {
-				title,
-				products,
-				categories: getCategories(products),
-			});
-		} catch (error) {
-			console.error("Failed to load admin catalogue overview", error);
-			return res.status(502).render("admin", { title, loadError: true });
-		}
-	});
+	app.use("/admin", createAdminRouter(productService, adminProducts));
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
