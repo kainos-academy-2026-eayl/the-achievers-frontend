@@ -83,6 +83,79 @@
     font: inherit;
 }
 
+.quantity-wrapper {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+
+.quantity-input-group {
+    display: flex;
+    align-items: center;
+    gap: 0.25rem;
+}
+
+.quantity-input-group label {
+    flex-shrink: 0;
+    margin-right: 0.75rem;
+}
+
+.quantity-display {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.5rem;
+    height: 2.5rem;
+    font-weight: 600;
+    border: 1px solid var(--grey-600);
+    border-radius: 5px;
+    background-color: var(--grey-100);
+    color: var(--grey-700);
+}
+
+.quantity-adjust-form {
+    display: inline;
+}
+
+.btn-quantity-increment,
+.btn-quantity-decrement {
+    width: 2.5rem;
+    height: 2.5rem;
+    padding: 0;
+    border: 1px solid var(--grey-600);
+    border-radius: 5px;
+    background: var(--white);
+    color: var(--grey-700);
+    font: inherit;
+    font-size: 1.2rem;
+    font-weight: bold;
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 150ms ease-in-out;
+}
+
+.btn-quantity-increment:hover:not(:disabled),
+.btn-quantity-decrement:hover:not(:disabled) {
+    background-color: var(--grey-100);
+    border-color: var(--green-700);
+    color: var(--green-700);
+}
+
+.btn-quantity-increment:active:not(:disabled),
+.btn-quantity-decrement:active:not(:disabled) {
+    background-color: var(--green-700);
+    color: var(--white);
+}
+
+.btn-quantity-increment:disabled,
+.btn-quantity-decrement:disabled {
+    opacity: 0.5;
+    cursor: not-allowed;
+    background-color: var(--grey-100);
+}
+
 .cart-remove {
     background: none;
     border: 0;
