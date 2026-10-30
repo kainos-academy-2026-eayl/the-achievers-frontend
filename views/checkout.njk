@@ -3,7 +3,6 @@
 {% block styles %}
   <link rel="stylesheet" href="/css/checkout.css">
 {% endblock %}
-
 {% block content %}
   <section class="checkout-page" aria-labelledby="checkout-title">
     <div class="container">
@@ -30,7 +29,7 @@
             <section class="checkout-section" aria-labelledby="shipping-title">
               <h2 id="shipping-title">Shipping address</h2>
               {% if savedAddresses.length %}
-                <fieldset id="saved-address-options" class="saved-address-options"{% if useDifferentAddress %} disabled{% endif %}>
+                <fieldset id="saved-address-options" class="saved-address-options">
                   <legend>Choose one saved address</legend>
                   {% if fieldErrors.addressChoice %}<p class="checkout-field-error" id="address-choice-error" role="alert">{{ fieldErrors.addressChoice }}</p>{% endif %}
                   {% for address in savedAddresses %}
@@ -48,16 +47,18 @@
                 {% if fieldErrors.addressChoice %}<p class="checkout-field-error" role="alert">{{ fieldErrors.addressChoice }}</p>{% endif %}
               {% endif %}
 
-              <label class="different-address-toggle" for="use-different-address">
-                <input id="use-different-address" type="checkbox" name="useDifferentAddress" value="yes"{% if useDifferentAddress %} checked{% endif %}>
-                Enter a different address
-              </label>
-              <p class="checkout-note">A different address is used for this order only and won't change your profile.</p>
-              <fieldset id="different-address-fields" class="checkout-address-fields"{% if not useDifferentAddress %} disabled{% endif %}>
+              <details class="different-address-disclosure"{% if useDifferentAddress %} open{% endif %}>
+                <summary>Enter a different address</summary>
+                <label class="different-address-toggle" for="use-different-address">
+                  <input id="use-different-address" type="checkbox" name="useDifferentAddress" value="yes"{% if useDifferentAddress %} checked{% endif %}>
+                  Use this address for this order
+                </label>
+                <p class="checkout-note">A different address is used for this order only and won't change your profile.</p>
+                <fieldset id="different-address-fields" class="checkout-address-fields">
                 <div class="checkout-field">
                   <label for="different-address-line1">Address line 1</label>
                   {% if fieldErrors.addressLine1 %}<p class="checkout-field-error" id="address-line1-error">{{ fieldErrors.addressLine1 }}</p>{% endif %}
-                  <input id="different-address-line1" name="differentAddressLine1" data-address-required autocomplete="shipping address-line1" maxlength="100" value="{{ values.addressLine1 }}"{% if useDifferentAddress %} required{% endif %}{% if fieldErrors.addressLine1 %} aria-invalid="true" aria-describedby="address-line1-error"{% endif %}>
+                  <input id="different-address-line1" name="differentAddressLine1" autocomplete="shipping address-line1" maxlength="100" value="{{ values.addressLine1 }}"{% if fieldErrors.addressLine1 %} aria-invalid="true" aria-describedby="address-line1-error"{% endif %}>
                 </div>
                 <div class="checkout-field">
                   <label for="different-address-line2">Address line 2 <span class="optional">(optional)</span></label>
@@ -66,14 +67,15 @@
                 <div class="checkout-field">
                   <label for="different-city">Town or city</label>
                   {% if fieldErrors.city %}<p class="checkout-field-error" id="city-error">{{ fieldErrors.city }}</p>{% endif %}
-                  <input id="different-city" name="differentCity" data-address-required autocomplete="shipping address-level2" maxlength="60" value="{{ values.city }}"{% if useDifferentAddress %} required{% endif %}{% if fieldErrors.city %} aria-invalid="true" aria-describedby="city-error"{% endif %}>
+                  <input id="different-city" name="differentCity" autocomplete="shipping address-level2" maxlength="60" value="{{ values.city }}"{% if fieldErrors.city %} aria-invalid="true" aria-describedby="city-error"{% endif %}>
                 </div>
                 <div class="checkout-field">
                   <label for="different-postcode">Postcode</label>
                   {% if fieldErrors.postcode %}<p class="checkout-field-error" id="postcode-error">{{ fieldErrors.postcode }}</p>{% endif %}
-                  <input id="different-postcode" name="differentPostcode" data-address-required autocomplete="shipping postal-code" maxlength="10" value="{{ values.postcode }}"{% if useDifferentAddress %} required{% endif %}{% if fieldErrors.postcode %} aria-invalid="true" aria-describedby="postcode-error"{% endif %}>
+                  <input id="different-postcode" name="differentPostcode" autocomplete="shipping postal-code" maxlength="10" value="{{ values.postcode }}"{% if fieldErrors.postcode %} aria-invalid="true" aria-describedby="postcode-error"{% endif %}>
                 </div>
-              </fieldset>
+                </fieldset>
+              </details>
             </section>
 
             <section class="checkout-section" aria-labelledby="payment-title">
@@ -124,8 +126,4 @@
       {% endif %}
     </div>
   </section>
-{% endblock %}
-
-{% block scripts %}
-  <script src="/js/checkout.js" defer></script>
 {% endblock %}

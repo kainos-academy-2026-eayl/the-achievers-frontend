@@ -3,106 +3,22 @@ import {
 	OrderApiError,
 	type ShippingAddressInput,
 } from "../clients/orderClient";
-import {
-	ProfileApiError,
-	type Profile,
-	type ProfileClient,
-} from "../clients/profileClient";
+import { ProfileApiError, type ProfileClient } from "../clients/profileClient";
 import { readCartId } from "./cartController";
 import type { CartService } from "../services/cartService";
+import type { CheckoutService } from "../services/checkoutService";
 import type { OrderService } from "../services/orderService";
 import type { ProductService } from "../services/productService";
 
 const title = "Checkout | Cue Corner";
-const DEMO_CARD_NUMBER = "4242424242424242";
-const DEMO_CARD_EXPIRY = "12/34";
-const DEMO_CARD_CVC = "123";
 
 type AddressValues = ShippingAddressInput;
 type CheckoutBody = Record<string, unknown>;
-type SavedAddress = AddressValues & { id: string; label: string };
 
 const currency = new Intl.NumberFormat("en-GB", {
 	style: "currency",
 	currency: "GBP",
 });
-
-function readString(body: CheckoutBody, key: string): string {
-	return typeof body[key] === "string" ? (body[key] as string).trim() : "";
-}
-
-function addressFromProfile(
-	address: {
-		addressLine1: string | null;
-		addressLine2: string | null;
-		city: string | null;
-		postcode: string | null;
-	} | null,
-): AddressValues | undefined {
-	if (!address) return undefined;
-	return {
-		addressLine1: address.addressLine1 ?? "",
-		addressLine2: address.addressLine2 ?? "",
-		city: address.city ?? "",
-		postcode: address.postcode ?? "",
-	};
-}
-
-function savedAddresses(profile: Profile): SavedAddress[] {
-	const candidates = [
-		{
-			id: "home",
-			label: "Home address",
-			address: profile.homeAddress,
-		},
-		...profile.otherAddresses.map((address, index) => ({
-			id: `other-${index}`,
-			label: address.label?.trim() || `Other address ${index + 1}`,
-			address,
-		})),
-	];
-	return candidates.flatMap(({ id, label, address }) => {
-		const values = addressFromProfile(address);
-		return values && isCompleteAddress(values)
-			? [{ id, label, ...values }]
-			: [];
-	});
-}
-
-function isCompleteAddress(
-	address: AddressValues | undefined,
-): address is AddressValues {
-	return Boolean(
-		address?.addressLine1.trim() &&
-			address.city.trim() &&
-			address.postcode.trim(),
-	);
-}
-
-function addressFromForm(body: CheckoutBody): AddressValues {
-	return {
-		addressLine1: readString(body, "differentAddressLine1"),
-		addressLine2: readString(body, "differentAddressLine2"),
-		city: readString(body, "differentCity"),
-		postcode: readString(body, "differentPostcode"),
-	};
-}
-
-function addressErrors(address: AddressValues): Record<string, string> {
-	const errors: Record<string, string> = {};
-	if (!address.addressLine1) errors.addressLine1 = "Enter address line 1.";
-	if (!address.city) errors.city = "Enter a town or city.";
-	if (!address.postcode) errors.postcode = "Enter a postcode.";
-	return errors;
-}
-
-function hasValidDemoCard(body: CheckoutBody): boolean {
-	return (
-		readString(body, "cardNumber").replace(/\s/g, "") === DEMO_CARD_NUMBER &&
-		readString(body, "cardExpiry") === DEMO_CARD_EXPIRY &&
-		readString(body, "cardCvc") === DEMO_CARD_CVC
-	);
-}
 
 function getSessionAuth(req: Request) {
 	return req.session.auth;
@@ -113,6 +29,10 @@ export function createCheckoutRouter(
 	profiles: Pick<ProfileClient, "get">,
 	orders: Pick<OrderService, "checkout" | "get">,
 	products: Pick<ProductService, "getAll">,
+	checkout: Pick<
+		CheckoutService,
+		"getSavedAddresses" | "addressFromForm" | "getSavedAddress" | "validateForm"
+	>,
 ): Router {
 	const router = Router();
 
@@ -146,7 +66,7 @@ export function createCheckoutRouter(
 				carts.get(cartId),
 				profiles.get(auth.accessToken),
 			]);
-			const availableAddresses = savedAddresses(profile);
+			const availableAddresses = checkout.getSavedAddresses(profile);
 			res.status(status).render("checkout", {
 				title,
 				cart,
@@ -192,27 +112,23 @@ export function createCheckoutRouter(
 		}
 		const body = (req.body ?? {}) as CheckoutBody;
 		const useDifferentAddress = body.useDifferentAddress === "yes";
-		const selectedAddressId = readString(body, "addressChoice");
-		const addressValues = addressFromForm(body);
-		const cardErrors = hasValidDemoCard(body)
-			? {}
-			: { cardDetails: "Enter the demo card details shown above." };
+		const selectedAddressId =
+			typeof body.addressChoice === "string" ? body.addressChoice.trim() : "";
+		const addressValues = checkout.addressFromForm(body);
 		let shippingAddress: AddressValues | undefined;
-		let fieldErrors: Record<string, string> = { ...cardErrors };
+		const fieldErrors = checkout.validateForm(
+			body,
+			useDifferentAddress,
+			addressValues,
+		);
 
 		if (useDifferentAddress) {
 			shippingAddress = addressValues;
-			fieldErrors = { ...fieldErrors, ...addressErrors(addressValues) };
 		} else {
 			try {
 				const profile = await profiles.get(auth.accessToken);
-				const selectedAddress = savedAddresses(profile).find(
-					(address) => address.id === selectedAddressId,
-				);
-				if (selectedAddress) {
-					const { id: _id, label: _label, ...address } = selectedAddress;
-					shippingAddress = address;
-				} else {
+				shippingAddress = checkout.getSavedAddress(profile, selectedAddressId);
+				if (!shippingAddress) {
 					fieldErrors.addressChoice =
 						"Choose a saved address or enter a different address.";
 				}

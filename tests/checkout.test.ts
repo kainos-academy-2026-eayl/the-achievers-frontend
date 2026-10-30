@@ -163,7 +163,9 @@ describe("Checkout and order placement", () => {
         expect(response.text).toContain("Enter a different address");
         expect(response.text).toMatch(/id="address-home"[^>]*checked/);
         expect(response.text).toContain('id="saved-address-options" class="saved-address-options"');
-        expect(response.text).toContain('id="different-address-fields" class="checkout-address-fields" disabled');
+        expect(response.text).toContain('<details class="different-address-disclosure">');
+        expect(response.text).toContain('id="different-address-fields" class="checkout-address-fields"');
+        expect(response.text).not.toContain('src="/js/checkout.js"');
         expect(response.text).toContain("£100,000.00");
         expect(response.text).toContain("4242 4242 4242 4242");
         expect(response.text).toContain("12/34");
@@ -254,7 +256,7 @@ describe("Checkout and order placement", () => {
         );
     });
 
-    it("disables saved choices when entering a different address", async () => {
+    it("keeps address options usable without client-side JavaScript", async () => {
         const { agent } = setup();
         await logIn(agent);
 
@@ -270,7 +272,9 @@ describe("Checkout and order placement", () => {
             });
 
         expect(response.status).toBe(400);
-        expect(response.text).toContain('id="saved-address-options" class="saved-address-options" disabled');
+        expect(response.text).toContain('id="saved-address-options" class="saved-address-options"');
+        expect(response.text).toContain('id="different-address-fields" class="checkout-address-fields"');
+        expect(response.text).not.toContain('id="saved-address-options" class="saved-address-options" disabled');
         expect(response.text).not.toContain('id="different-address-fields" class="checkout-address-fields" disabled');
     });
 
