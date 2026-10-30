@@ -2,6 +2,115 @@
 
 {% block styles %}
   <link rel="stylesheet" href="/css/shop.css">
+  <style>
+    dialog[open]::backdrop {
+      background: rgba(0, 0, 0, 0.5);
+    }
+
+    #add-to-cart-modal {
+      width: 90%;
+      max-width: 400px;
+      padding: 2rem;
+      border: 1px solid #dfe5e2;
+      border-radius: 8px;
+      box-shadow: 0 10px 40px rgba(0, 0, 0, 0.16);
+    }
+
+    #add-to-cart-modal h2 {
+      margin-top: 0;
+      margin-bottom: 0.5rem;
+      font-size: 1.3rem;
+    }
+
+    #add-to-cart-modal p {
+      margin: 0 0 1.5rem;
+      color: var(--grey-600);
+    }
+
+    .modal-actions {
+      display: flex;
+      gap: 0.75rem;
+      justify-content: flex-end;
+    }
+
+    .modal-actions button {
+      padding: 0.6rem 1.2rem;
+      font: inherit;
+      font-weight: 600;
+      border: 0;
+      border-radius: 6px;
+      cursor: pointer;
+      transition: background-color 0.15s ease;
+    }
+
+    .modal-actions [data-confirm] {
+      color: var(--white);
+      background: var(--green-700);
+    }
+
+    .modal-actions [data-confirm]:hover:not(:disabled) {
+      background: var(--green-900);
+    }
+
+    .modal-actions [data-confirm]:disabled {
+      opacity: 0.7;
+      cursor: not-allowed;
+    }
+
+    .modal-actions [data-cancel] {
+      color: var(--grey-700);
+      background: #f0f2f1;
+      border: 1px solid #dfe5e2;
+    }
+
+    .modal-actions [data-cancel]:hover {
+      background: #e6e8e7;
+    }
+
+    .cart-notification {
+      position: fixed;
+      top: 1rem;
+      right: 1rem;
+      padding: 1rem 1.5rem;
+      border-radius: 6px;
+      font-weight: 600;
+      z-index: 1000;
+      animation: slideIn 0.3s ease;
+    }
+
+    .cart-notification.success {
+      background: var(--green-700);
+      color: white;
+      border-left: 4px solid var(--green-900);
+    }
+
+    .cart-notification.error {
+      background: #f5e6e6;
+      color: #a32626;
+      border-left: 4px solid #a32626;
+    }
+
+    @keyframes slideIn {
+      from {
+        transform: translateX(400px);
+        opacity: 0;
+      }
+      to {
+        transform: translateX(0);
+        opacity: 1;
+      }
+    }
+
+    @media (max-width: 600px) {
+      .cart-notification {
+        top: auto;
+        right: auto;
+        bottom: 1rem;
+        left: 1rem;
+        right: 1rem;
+      }
+    }
+  </style>
 {% endblock %}
 
 {% block content %}
@@ -127,5 +236,18 @@
       </div>
       </div>
     </div>
+
+    <dialog id="add-to-cart-modal">
+      <h2>Add to Cart?</h2>
+      <p>Add <strong data-product-name></strong> to your cart?</p>
+      <div class="modal-actions">
+        <button type="button" data-cancel>Cancel</button>
+        <button type="button" data-confirm>Add to Cart</button>
+      </div>
+    </dialog>
   </section>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/js/cart-confirmation.js"></script>
 {% endblock %}
