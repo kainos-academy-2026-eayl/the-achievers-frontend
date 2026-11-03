@@ -1,8 +1,12 @@
 import { randomBytes } from "node:crypto";
-import { Router } from "express";
+import { type Request, Router } from "express";
 import { ProductApiError, type ProductClient } from "../clients/productClient";
 import { requireAdmin } from "../middleware/authMiddleware";
 import { getCategories, type ProductService } from "../services/productService";
+import {
+	type ProductFieldErrors,
+	validateProductInput,
+} from "../services/productValidation";
 
 const title = "Admin dashboard | Cue Corner";
 
@@ -10,9 +14,23 @@ function deletePath(id: string): string {
 	return `/admin/products/${encodeURIComponent(id)}/delete`;
 }
 
+function getCsrfToken(req: Request): string {
+	req.session.adminCsrfToken ??= randomBytes(32).toString("hex");
+	return req.session.adminCsrfToken;
+}
+
+function hasValidCsrfToken(req: Request): boolean {
+	const token: unknown = req.body?.csrfToken;
+	return (
+		typeof token === "string" &&
+		typeof req.session.adminCsrfToken === "string" &&
+		token === req.session.adminCsrfToken
+	);
+}
+
 export function createAdminRouter(
 	products: Pick<ProductService, "getAll">,
-	productClient: Pick<ProductClient, "delete">,
+	productClient: Pick<ProductClient, "delete" | "create">,
 ): Router {
 	const router = Router();
 	router.use((_req, res, next) => {
@@ -32,10 +50,78 @@ export function createAdminRouter(
 				})),
 				categories: getCategories(catalogue),
 				deleted: req.query.deleted === "1",
+				created: req.query.created === "1",
 			});
 		} catch (error) {
 			console.error("Failed to load admin catalogue overview", error);
 			res.status(502).render("admin", { title, loadError: true });
+		}
+	});
+
+	router.get("/products/new", (req, res) => {
+		res.render("admin-create", {
+			title: "Create product | Cue Corner",
+			values: {},
+			csrfToken: getCsrfToken(req),
+		});
+	});
+
+	router.post("/products", async (req, res) => {
+		const auth = req.session.auth;
+		if (!auth) {
+			res.redirect(303, "/login");
+			return;
+		}
+		const { values, fieldErrors } = validateProductInput(req.body);
+		const renderErrors = (
+			status: number,
+			formError: string,
+			errors: ProductFieldErrors = {},
+		) =>
+			res.status(status).render("admin-create", {
+				title: "Create product | Cue Corner",
+				values,
+				fieldErrors: errors,
+				formError,
+				csrfToken: getCsrfToken(req),
+			});
+		if (!hasValidCsrfToken(req)) {
+			console.warn("Rejected product creation with an invalid CSRF token");
+			renderErrors(
+				403,
+				"Invalid form session. Review your details and submit again.",
+			);
+			return;
+		}
+		if (Object.keys(fieldErrors).length > 0) {
+			renderErrors(400, "Please fix the errors below.", fieldErrors);
+			return;
+		}
+		try {
+			await productClient.create(values, auth.accessToken);
+			res.redirect(303, "/admin?created=1");
+		} catch (error) {
+			if (error instanceof ProductApiError) {
+				if (error.status === 401) {
+					delete req.session.auth;
+					delete req.session.adminCsrfToken;
+					res.redirect(303, "/login");
+					return;
+				}
+				if (error.status === 403) {
+					res.status(403).render("admin", { title, notAllowed: true });
+					return;
+				}
+				if (error.status === 400) {
+					renderErrors(400, "Please fix the errors below.", error.fieldErrors);
+					return;
+				}
+			}
+			console.error("Failed to create product", error);
+			renderErrors(
+				502,
+				"We could not confirm that your product was saved. Check the catalogue before trying again.",
+			);
 		}
 	});
 
@@ -51,12 +137,11 @@ export function createAdminRouter(
 				});
 				return;
 			}
-			req.session.adminCsrfToken ??= randomBytes(32).toString("hex");
 			res.render("admin-delete", {
 				title,
 				product,
 				deletePath: deletePath(product.id),
-				csrfToken: req.session.adminCsrfToken,
+				csrfToken: getCsrfToken(req),
 			});
 		} catch (error) {
 			console.error("Failed to load product deletion confirmation", error);
@@ -73,12 +158,7 @@ export function createAdminRouter(
 			res.redirect(303, "/login");
 			return;
 		}
-		const csrfToken: unknown = req.body?.csrfToken;
-		if (
-			typeof csrfToken !== "string" ||
-			!req.session.adminCsrfToken ||
-			csrfToken !== req.session.adminCsrfToken
-		) {
+		if (!hasValidCsrfToken(req)) {
 			console.warn("Rejected admin deletion with an invalid CSRF token");
 			res.status(403).render("admin-delete", {
 				title,
