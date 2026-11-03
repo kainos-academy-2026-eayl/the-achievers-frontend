@@ -43,6 +43,41 @@ describe("GET /shop", () => {
         expect(response.text).toContain("£89.99");
     });
 
+    it("shows stock status and disables adding out-of-stock products", async () => {
+        const response = await request(
+            appWithProducts([
+                { ...validProduct, inStock: true, stock: 4 },
+                {
+                    ...validProduct,
+                    id: "sold-out",
+                    name: "Sold Out Cue",
+                    inStock: false,
+                    stock: 0,
+                },
+            ]),
+        ).get("/shop");
+
+        expect(response.text).toContain(">In stock</p>");
+        expect(response.text).toContain(">Out of stock</p>");
+        expect(response.text).toMatch(
+            /aria-label="Add Sold Out Cue to cart" disabled/,
+        );
+        expect(response.text).not.toMatch(
+            /aria-label="Add Pro Series Maple Cue to cart" disabled/,
+        );
+    });
+
+    it("shows stock status on featured products", async () => {
+        const response = await request(
+            appWithProducts([{ ...validProduct, inStock: false, stock: 0 }]),
+        ).get("/");
+
+        expect(response.text).toContain(">Out of stock</p>");
+        expect(response.text).toMatch(
+            /aria-label="Add Pro Series Maple Cue to cart" disabled/,
+        );
+    });
+
     it("formats prices as GBP currency", async () => {
         const response = await request(
             appWithProducts([{ ...validProduct, price: 1234.5 }]),

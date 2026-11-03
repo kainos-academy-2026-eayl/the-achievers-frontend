@@ -1,0 +1,64 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/checkout.css">
+{% endblock %}
+
+{% block content %}
+  <section class="checkout-page" aria-labelledby="confirmation-title">
+    <div class="container">
+      {% if notFound %}
+        <div class="checkout-message" role="alert">
+          <h1 id="confirmation-title">Order not found</h1>
+          <p>This order may not belong to your account.</p>
+          <a class="btn btn-gold" href="/shop">Browse products</a>
+        </div>
+      {% elif loadError %}
+        <div class="checkout-message" role="alert">
+          <h1 id="confirmation-title">We couldn't load your confirmation</h1>
+          <p>Your order may have been placed. Reload this page to try again.</p>
+        </div>
+      {% else %}
+        <div class="confirmation-heading" role="status">
+          <p class="confirmation-kicker">Order placed</p>
+          <h1 id="confirmation-title">Thank you for your order</h1>
+          <p>Your order reference is <strong>{{ order.reference }}</strong>.</p>
+        </div>
+
+        <div class="confirmation-layout">
+          <section class="confirmation-section" aria-labelledby="items-title">
+            <h2 id="items-title">Items ordered</h2>
+            <ul class="checkout-items confirmation-items">
+              {% for item in order.items %}
+                <li>
+                  <span>{{ item.quantity }} × {{ item.name }}</span>
+                  <strong>{{ item.subtotal }}</strong>
+                </li>
+              {% endfor %}
+            </ul>
+            <div class="checkout-total"><span>Subtotal</span><strong>{{ order.subtotal }}</strong></div>
+            <div class="checkout-total"><span>Shipping</span><strong>{{ order.shipping }}</strong></div>
+            <div class="checkout-total checkout-grand-total"><span>Total paid</span><strong>{{ order.total }}</strong></div>
+          </section>
+
+          <section class="confirmation-section" aria-labelledby="delivery-title">
+            {% if creditBalance %}
+              <div class="credit-balance-panel" aria-label="Remaining account credit">
+                <span>Remaining account credit</span>
+                <strong>{{ creditBalance }}</strong>
+              </div>
+            {% endif %}
+            <h2 id="delivery-title">Shipping address</h2>
+            <address>
+              {{ order.shippingAddress.addressLine1 }}<br>
+              {% if order.shippingAddress.addressLine2 %}{{ order.shippingAddress.addressLine2 }}<br>{% endif %}
+              {{ order.shippingAddress.city }}<br>
+              {{ order.shippingAddress.postcode }}
+            </address>
+          </section>
+        </div>
+        <a class="btn btn-green" href="/shop">Continue shopping</a>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

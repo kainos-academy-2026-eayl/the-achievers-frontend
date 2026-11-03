@@ -221,6 +221,13 @@
     text-align: center;
 }
 
+.cart-continue-link {
+    display: inline-block;
+    margin-top: 0.75rem;
+    color: var(--green-700);
+    font-weight: 600;
+}
+
 .cart-notice {
     padding: 1rem;
     background: var(--white);
