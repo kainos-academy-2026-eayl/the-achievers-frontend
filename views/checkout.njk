@@ -50,7 +50,7 @@
               <details class="different-address-disclosure"{% if useDifferentAddress %} open{% endif %}>
                 <summary>Enter a different address</summary>
                 <label class="different-address-toggle" for="use-different-address">
-                  <input id="use-different-address" type="checkbox" name="useDifferentAddress" value="yes"{% if useDifferentAddress %} checked{% endif %}>
+                  <input id="use-different-address" type="radio" name="addressChoice" value="different"{% if selectedAddressId == "different" %} checked{% endif %}>
                   Use this address for this order
                 </label>
                 <p class="checkout-note">A different address is used for this order only and won't change your profile.</p>

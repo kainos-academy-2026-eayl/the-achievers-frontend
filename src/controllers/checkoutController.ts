@@ -72,7 +72,8 @@ export function createCheckoutRouter(
 				cart,
 				cartCount: cart.count,
 				savedAddresses: availableAddresses,
-				selectedAddressId: selectedAddressId || availableAddresses[0]?.id || "",
+				selectedAddressId:
+					selectedAddressId || availableAddresses[0]?.id || "different",
 				creditBalance: currency.format(profile.creditBalance),
 				useDifferentAddress: useDifferentAddress || !availableAddresses.length,
 				values,
@@ -111,9 +112,9 @@ export function createCheckoutRouter(
 			return;
 		}
 		const body = (req.body ?? {}) as CheckoutBody;
-		const useDifferentAddress = body.useDifferentAddress === "yes";
 		const selectedAddressId =
 			typeof body.addressChoice === "string" ? body.addressChoice.trim() : "";
+		const useDifferentAddress = selectedAddressId === "different";
 		const addressValues = checkout.addressFromForm(body);
 		let shippingAddress: AddressValues | undefined;
 		const fieldErrors = checkout.validateForm(

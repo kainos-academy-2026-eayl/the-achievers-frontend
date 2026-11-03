@@ -167,6 +167,7 @@ describe("Checkout and order placement", () => {
         expect(response.text).toContain("Mum&#39;s house");
         expect(response.text).toContain("Enter a different address");
         expect(response.text).toMatch(/id="address-home"[^>]*checked/);
+        expect(response.text).toContain('id="use-different-address" type="radio" name="addressChoice" value="different"');
         expect(response.text).toContain('id="saved-address-options" class="saved-address-options"');
         expect(response.text).toContain('<details class="different-address-disclosure">');
         expect(response.text).toContain('id="different-address-fields" class="checkout-address-fields"');
@@ -176,6 +177,24 @@ describe("Checkout and order placement", () => {
         expect(response.text).toContain("12/34");
         expect(response.text).toContain("123");
         expect(response.headers["cache-control"]).toBe("no-store");
+    });
+
+    it("selects the different address option when no saved address is available", async () => {
+        const { agent, profiles } = setup();
+        await logIn(agent);
+        profiles.get.mockResolvedValueOnce({
+            ...profile,
+            homeAddress: null,
+            otherAddresses: [],
+        });
+
+        const response = await agent.get("/checkout");
+
+        expect(response.status).toBe(200);
+        expect(response.text).toContain(
+            'id="use-different-address" type="radio" name="addressChoice" value="different" checked',
+        );
+        expect(response.text).toContain('<details class="different-address-disclosure" open>');
     });
 
     it("places an order to a selected saved alternate address", async () => {
@@ -241,7 +260,7 @@ describe("Checkout and order placement", () => {
             .type("form")
             .send({
                 ...validPayment,
-                useDifferentAddress: "yes",
+                addressChoice: "different",
                 differentAddressLine1: "8 Different Road",
                 differentAddressLine2: "Flat 2",
                 differentCity: "Lisburn",
@@ -270,7 +289,7 @@ describe("Checkout and order placement", () => {
             .type("form")
             .send({
                 ...validPayment,
-                useDifferentAddress: "yes",
+                addressChoice: "different",
                 differentAddressLine1: "",
                 differentCity: "",
                 differentPostcode: "",
