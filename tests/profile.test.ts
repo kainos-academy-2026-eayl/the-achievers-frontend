@@ -55,17 +55,17 @@ const validForm = {
 };
 
 function token(overrides: Record<string, unknown> = {}) {
-	const claims = {
-		sub: "1",
-		iss: "the-achievers-backend",
-		aud: "the-achievers-api",
-		role: "user",
-		exp: Math.floor(Date.now() / 1000) + 3600,
-		...overrides,
-	};
-	const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
-	const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
-	return `${header}.${payload}.test-signature`;
+    const claims = {
+        sub: "1",
+        iss: "the-achievers-backend",
+        aud: "the-achievers-api",
+        role: "user",
+        exp: Math.floor(Date.now() / 1000) + 3600,
+        ...overrides,
+    };
+    const header = Buffer.from(JSON.stringify({ alg: "HS256", typ: "JWT" })).toString("base64url");
+    const payload = Buffer.from(JSON.stringify(claims)).toString("base64url");
+    return `${header}.${payload}.test-signature`;
 }
 
 const accessToken = token();
@@ -149,6 +149,7 @@ describe("Customer profile", () => {
         );
         expect(response.text).toContain("Member since January 2026");
         expect(response.text).toContain('href="#addresses"');
+        expect(response.text).toContain('href="/orders">View Order History');
         expect(response.text).toMatch(
             /<details class="address-panel">\s*<summary>\s*<span class="address-panel-title">Work<\/span>\s*<span class="address-panel-summary">2 Office Park, BT2 8LA<\/span>/,
         );

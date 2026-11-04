@@ -7,11 +7,8 @@ import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
 import { ResetPasswordClient } from "./clients/resetPasswordClient";
 import { ReviewClient } from "./clients/reviewClient";
-import { createAboutRouter } from "./controllers/aboutController";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
-import { createContactRouter } from "./controllers/contactController";
-import { createTermsRouter } from "./controllers/termsController";
 import {
 	type CartOperations,
 	createCartRouter,
@@ -142,6 +139,7 @@ export function createApp(
 				"/reset-pass",
 				"/admin",
 				"/profile",
+				"/orders",
 				"/about",
 				"/contact",
 				"/terms",
@@ -189,9 +187,6 @@ export function createApp(
 	app.use("/terms", createTermsRouter());
 	app.use("/admin", createAdminRouter(productService, adminProducts));
 	app.use("/reset-pass", createResetPasswordRouter(resetPasswordService));
-	app.use("/about", createAboutRouter());
-	app.use("/contact", createContactRouter());
-	app.use("/terms", createTermsRouter());
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";

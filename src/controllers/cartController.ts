@@ -8,7 +8,7 @@ export type CartOperations = Pick<
 	"get" | "add" | "update" | "remove"
 >;
 
-const MAX_CART_QUANTITY = 99;
+export const MAX_CART_QUANTITY = 99;
 
 interface QuantityButtonState {
 	canDecrement: boolean;
@@ -36,7 +36,7 @@ export function readCartId(req: Request): string | undefined {
 		: undefined;
 }
 
-function ensureCartId(req: Request, res: Response): string {
+export function ensureCartId(req: Request, res: Response): string {
 	const existing = readCartId(req);
 	if (existing) return existing;
 	const id = randomUUID();
@@ -94,6 +94,8 @@ export function createCartRouter(service: CartOperations): Router {
 			removed: "Product removed from your cart.",
 			incremented: "Quantity increased.",
 			decremented: "Quantity decreased.",
+			reordered: "Products from your order were added to your cart.",
+			partial: "Some products from this order are no longer available.",
 		};
 		const message =
 			typeof req.query.notice === "string"

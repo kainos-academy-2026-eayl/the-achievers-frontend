@@ -73,6 +73,10 @@ export class OrderClient {
 		);
 	}
 
+	list(accessToken: string): Promise<unknown> {
+		return this.request(accessToken, "GET", "/api/orders");
+	}
+
 	get(accessToken: string, id: string): Promise<unknown> {
 		return this.request(
 			accessToken,

@@ -19,6 +19,7 @@ interface LoginResponse {
 declare module "express-session" {
 	interface SessionData {
 		adminCsrfToken?: string;
+		ordersCsrfToken?: string;
 		auth?: {
 			accessToken: string;
 			user: LoginUser;
