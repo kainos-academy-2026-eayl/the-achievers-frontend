@@ -1,5 +1,5 @@
-import type { Profile } from "../clients/profileClient";
 import type { ShippingAddressInput } from "../clients/orderClient";
+import type { Profile } from "../clients/profileClient";
 
 type CheckoutBody = Record<string, unknown>;
 type SavedAddress = ShippingAddressInput & { id: string; label: string };

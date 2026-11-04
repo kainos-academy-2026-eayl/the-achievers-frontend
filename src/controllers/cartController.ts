@@ -1,5 +1,5 @@
 import { randomUUID } from "node:crypto";
-import { Router, type Request, type Response } from "express";
+import { type Request, type Response, Router } from "express";
 import { CartApiError } from "../clients/cartClient";
 import type { CartService } from "../services/cartService";
 

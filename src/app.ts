@@ -6,6 +6,8 @@ import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
 import { ResetPasswordClient } from "./clients/resetPasswordClient";
+import { ReviewClient } from "./clients/reviewClient";
+import { createAboutRouter } from "./controllers/aboutController";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
 import { createContactRouter } from "./controllers/contactController";
@@ -15,11 +17,12 @@ import {
 	createCartRouter,
 	readCartId,
 } from "./controllers/cartController";
+import { createCheckoutRouter } from "./controllers/checkoutController";
+import { createOrderHistoryRouter } from "./controllers/orderHistoryController";
 import {
 	createProfileRouter,
 	type ProfileOperations,
 } from "./controllers/profileController";
-import { createCheckoutRouter } from "./controllers/checkoutController";
 import {
 	createResetPasswordRouter,
 	type ResetPasswordOperations,
@@ -34,6 +37,8 @@ import {
 	getCategories,
 	ProductService,
 } from "./services/productService";
+import { ReviewService } from "./services/reviewService";
+
 const SAFE_WORD_QUESTIONS: Record<string, string> = {
 	"mothers-maiden-name": "What is your mother's maiden name?",
 	"favourite-movie": "What is your favourite movie?",
@@ -62,7 +67,10 @@ export function createApp(
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
 	),
-	orderService: Pick<OrderService, "checkout" | "get"> = new OrderService(
+	orderService: Pick<
+		OrderService,
+		"checkout" | "get" | "list"
+	> = new OrderService(
 		new OrderClient(
 			process.env.API_BASE_URL ??
 				process.env.BACKEND_URL ??
@@ -79,6 +87,13 @@ export function createApp(
 		process.env.API_BASE_URL ??
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
+	),
+	reviewService: Pick<ReviewService, "listMine" | "save"> = new ReviewService(
+		new ReviewClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
 	),
 ): Express {
 	const app = express();
@@ -149,6 +164,14 @@ export function createApp(
 	app.use("/cart", createCartRouter(cartService));
 	app.use("/profile", requireAuth, createProfileRouter(profileService));
 	app.use(["/checkout", "/orders"], requireAuth);
+	app.use(
+		createOrderHistoryRouter(
+			orderService,
+			reviewService,
+			cartService,
+			productService,
+		),
+	);
 	app.use(
 		createCheckoutRouter(
 			cartService,

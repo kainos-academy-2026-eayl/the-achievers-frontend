@@ -4,11 +4,11 @@ import {
 	type ShippingAddressInput,
 } from "../clients/orderClient";
 import { ProfileApiError, type ProfileClient } from "../clients/profileClient";
-import { readCartId } from "./cartController";
 import type { CartService } from "../services/cartService";
 import type { CheckoutService } from "../services/checkoutService";
 import type { OrderService } from "../services/orderService";
 import type { ProductService } from "../services/productService";
+import { readCartId } from "./cartController";
 
 const title = "Checkout | Cue Corner";
 
