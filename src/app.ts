@@ -258,12 +258,23 @@ export function createApp(
 		res.render("reset-pass", { title: "Reset Password | Cue Corner" });
 	});
 
-	app.get("/reset-pass/hint", async (req: Request, res: Response) => {
+	// POST so the other form fields never end up in the URL; GET stays for direct links.
+	const showResetHint = async (req: Request, res: Response) => {
 		res.set("Cache-Control", "no-store");
-		const email =
-			typeof req.query.email === "string" ? req.query.email.trim() : "";
+		const raw = req.method === "POST" ? req.body?.email : req.query.email;
+		const email = typeof raw === "string" ? raw.trim() : "";
+		const renderHint = (status: number, hintMessage: string, hintError = true) =>
+			res.status(status).render("reset-pass", {
+				title: "Reset Password | Cue Corner",
+				email,
+				hintMessage,
+				hintError,
+			});
+		if (!email) {
+			return renderHint(400, "Enter your email address above to see your hint.");
+		}
 		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
-			return res.status(400).json({ error: "Enter a valid email address." });
+			return renderHint(400, "Enter a valid email address.");
 		}
 
 		try {
@@ -288,26 +299,29 @@ export function createApp(
 					: "";
 
 			if (backendResponse.status !== 200 && backendResponse.status !== 404) {
+<<<<<<< HEAD
 				console.error(
 					`Hint backend returned status ${backendResponse.status}.`,
 				);
 				return res
 					.status(502)
 					.json({ error: "Unable to load your hint. Please try again." });
+=======
+				console.error(`Hint backend returned status ${backendResponse.status}.`);
+				return renderHint(502, "Unable to load your hint. Please try again.");
+>>>>>>> 51d91c9 (removed client side javascript)
 			}
 			if (!Object.hasOwn(SAFE_WORD_QUESTIONS, hint)) {
-				return res
-					.status(404)
-					.json({ error: "We couldn't find a hint for that email." });
+				return renderHint(404, "There is no account linked to that email. Use an email that is linked to an existing account.");
 			}
-			return res.json({ question: SAFE_WORD_QUESTIONS[hint] });
+			return renderHint(200, SAFE_WORD_QUESTIONS[hint] as string, false);
 		} catch (error) {
 			console.error("Unable to reach the hint backend:", error);
-			return res
-				.status(502)
-				.json({ error: "Unable to load your hint. Please try again." });
+			return renderHint(502, "Unable to load your hint. Please try again.");
 		}
-	});
+	};
+	app.get("/reset-pass/hint", showResetHint);
+	app.post("/reset-pass/hint", showResetHint);
 
 	app.get("/registration", (_req: Request, res: Response) => {
 		res.render("registration", { title: "Register | Cue Corner" });

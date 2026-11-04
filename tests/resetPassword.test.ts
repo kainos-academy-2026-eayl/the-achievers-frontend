@@ -1,5 +1,3 @@
-import { readFileSync } from "node:fs";
-import vm from "node:vm";
 import request from "supertest";
 import { afterEach, describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
@@ -52,32 +50,14 @@ describe("GET /reset-pass", () => {
         const response = await request(app).get("/reset-pass");
 
         expect(response.status).toBe(200);
-        expect(response.text).toContain('action="/reset-pass" method="post"');
+        expect(response.text).toContain('action="/reset-pass/verify" method="post"');
         expect(response.text).toContain(
             'id="safe-word" name="safeWord" type="password"',
         );
-        expect(response.text).toMatch(/id="reset-new-password-fields"\s+hidden/);
-        expect(response.text).toMatch(/name="newPassword"[^>]*\sdisabled/);
-        expect(response.text).toMatch(/name="confirmPassword"[^>]*\sdisabled/);
+        expect(response.text).not.toContain('name="newPassword"');
+        expect(response.text).not.toContain('name="confirmPassword"');
         expect(response.text).toMatch(/id="reset-submit"[^>]*>Submit</);
-        expect(response.text).toContain("/js/reset-password.js");
-    });
-
-    it("loads its page scripts together without clashing over global names", async () => {
-        const { app } = setup();
-        const page = await request(app).get("/reset-pass");
-        const scriptPaths = [...page.text.matchAll(/<script src="(\/js\/[^"]+)"/g)].map(
-            (match) => match[1] ?? "",
-        );
-
-        // Classic scripts share one global scope, so a repeated top-level const stops the later script from loading.
-        const context = vm.createContext({ document: { getElementById: () => null } });
-
-        expect(scriptPaths).toContain("/js/reset-password.js");
-        for (const path of scriptPaths) {
-            const source = readFileSync(`public${path}`, "utf8");
-            expect(() => vm.runInContext(source, context, { filename: path })).not.toThrow();
-        }
+        expect(response.text).not.toContain("<script");
     });
 });
 
@@ -92,7 +72,11 @@ describe("POST /reset-pass/verify", () => {
 
         expect(response.status).toBe(200);
         expect(response.headers["cache-control"]).toBe("no-store");
-        expect(response.body).toEqual({ verified: true });
+        expect(response.text).toContain('action="/reset-pass" method="post"');
+        expect(response.text).toContain('name="newPassword"');
+        expect(response.text).toContain('name="confirmPassword"');
+        expect(response.text).toMatch(/name="email"[^>]*readonly/);
+        expect(response.text).not.toContain(safeWord);
         expect(resetPasswords.verifySafeWord).toHaveBeenCalledExactlyOnceWith(
             email,
             safeWord,
@@ -109,9 +93,8 @@ describe("POST /reset-pass/verify", () => {
             .send({ email, safeWord: "wrong" });
 
         expect(response.status).toBe(401);
-        expect(response.body).toEqual({
-            error: "The email or safe word is incorrect.",
-        });
+        expect(response.text).toContain("The email or safe word is incorrect.");
+        expect(response.text).not.toContain('name="newPassword"');
     });
 
     it.each([
@@ -133,7 +116,7 @@ describe("POST /reset-pass/verify", () => {
             .send(details);
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ error: message });
+        expect(response.text).toContain(message);
         expect(resetPasswords.verifySafeWord).not.toHaveBeenCalled();
     });
 
@@ -146,7 +129,7 @@ describe("POST /reset-pass/verify", () => {
             .send("email=a%40example.com&email=b%40example.com&safeWord=x");
 
         expect(response.status).toBe(400);
-        expect(response.body).toEqual({ error: "Enter your email address." });
+        expect(response.text).toContain("Enter your email address.");
         expect(resetPasswords.verifySafeWord).not.toHaveBeenCalled();
     });
 
@@ -162,7 +145,7 @@ describe("POST /reset-pass/verify", () => {
             .send({ email, safeWord });
 
         expect(response.status).toBe(429);
-        expect(response.body.error).toContain("Too many attempts");
+        expect(response.text).toContain("Too many attempts");
     });
 
     it.each([
@@ -179,9 +162,9 @@ describe("POST /reset-pass/verify", () => {
             .send({ email, safeWord });
 
         expect(response.status).toBe(502);
-        expect(response.body).toEqual({
-            error: "We couldn't check your details right now. Please try again.",
-        });
+        expect(response.text).toContain(
+            "We couldn&#39;t check your details right now. Please try again.",
+        );
         expect(consoleError).toHaveBeenCalledExactlyOnceWith(logged);
     });
 });

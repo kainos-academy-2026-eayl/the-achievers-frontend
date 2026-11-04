@@ -50,12 +50,19 @@ export function createResetPasswordRouter(
 		next();
 	});
 
-	// Called by the page script to check the email and safe word before it shows the new password fields.
+	// Step one: check the email and safe word before showing the new password fields.
 	router.post("/verify", async (req: Request, res: Response) => {
 		const form = readResetPasswordForm(req.body ?? {});
+		const renderError = (status: number, message: string) =>
+			res.status(status).render("reset-pass", {
+				title,
+				email: form.email,
+				resetError: true,
+				resetMessage: message,
+			});
 		const [firstError] = validateSafeWordCheck(form);
 		if (firstError) {
-			res.status(400).json({ error: firstError });
+			renderError(400, firstError);
 			return;
 		}
 
@@ -65,16 +72,22 @@ export function createResetPasswordRouter(
 				form.safeWord,
 			);
 			if (!isVerified) {
-				res.status(401).json({ error: INCORRECT_DETAILS });
+				renderError(401, INCORRECT_DETAILS);
 				return;
 			}
-			res.json({ verified: true });
+			res.render("reset-pass", {
+				title,
+				email: form.email,
+				showNewPasswordFields: true,
+				resetMessage:
+					"Your details are correct. Enter your safe word again and choose a new password.",
+			});
 		} catch (error) {
 			const failure = describeFailure(
 				error,
 				"We couldn't check your details right now. Please try again.",
 			);
-			res.status(failure.status).json({ error: failure.message });
+			renderError(failure.status, failure.message);
 		}
 	});
 

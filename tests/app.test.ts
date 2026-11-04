@@ -276,7 +276,7 @@ describe('GET /reset-pass/hint', () => {
             'http://localhost:3000/api/safe-word-hint?email=cue-user%40example.com',
         );
         expect(response.status).toBe(200);
-        expect(response.body).toEqual({ question: "What was your first pet's name?" });
+        expect(response.text).toContain("What was your first pet&#39;s name?");
     });
 
     it('rejects an invalid email without calling the backend', async () => {
@@ -296,5 +296,34 @@ describe('GET /reset-pass/hint', () => {
             .query({ email: 'missing@example.com' });
 
         expect(response.status).toBe(404);
+        expect(response.text).toContain('no account linked to that email');
+    });
+
+    it('asks for an email when the form is posted without one, ignoring other fields', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+        const response = await request(createApp())
+            .post('/reset-pass/hint')
+            .type('form')
+            .send({ email: '  ', safeWord: 'secret' });
+
+        expect(response.status).toBe(400);
+        expect(response.text).toContain('Enter your email address above to see your hint.');
+        expect(response.text).not.toContain('secret');
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
+    it('reads the email from the posted reset form', async () => {
+        vi.spyOn(globalThis, 'fetch').mockResolvedValue(
+            new Response(JSON.stringify({ safeWordHint: 'first-pet' }), { status: 200 }),
+        );
+
+        const response = await request(createApp())
+            .post('/reset-pass/hint')
+            .type('form')
+            .send({ email: 'cue-user@example.com' });
+
+        expect(response.text).toContain('value="cue-user@example.com"');
+        expect(response.text).toContain("What was your first pet&#39;s name?");
     });
 });

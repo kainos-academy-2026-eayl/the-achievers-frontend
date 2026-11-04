@@ -65,14 +65,6 @@
     font-size: 0.85rem;
 }
 
-.password-count {
-    font-weight: 600;
-}
-
-.password-count.is-valid {
-    color: var(--green-700);
-}
-
 .auth-field label {
     color: var(--green-900);
     font-weight: 600;
@@ -127,15 +119,19 @@
     text-align: center;
 }
 
-.reset-hint summary {
+.reset-hint-link {
+    padding: 0;
+    border: 0;
+    background: none;
     color: var(--green-700);
+    font: inherit;
     font-weight: 600;
     text-decoration: underline;
     text-underline-offset: 3px;
     cursor: pointer;
 }
 
-.reset-hint summary:hover {
+.reset-hint-link:hover {
     color: var(--green-900);
 }
 
