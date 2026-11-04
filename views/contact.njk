@@ -1,0 +1,92 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/contact.css">
+{% endblock %}
+
+{% block content %}
+
+  <!-- HERO: Contact Us Title -->
+  <section class="contact-hero" aria-labelledby="contact-hero-title">
+    <div class="container contact-hero-inner">
+      <h1 id="contact-hero-title">Contact Us</h1>
+      <p class="contact-hero-sub">We're here to help and answer any questions you might have</p>
+    </div>
+  </section>
+
+  <!-- INTRODUCTION SECTION -->
+  <section class="section contact-intro" aria-labelledby="intro-title">
+    <div class="container">
+      <h2 id="intro-title" class="section-title">Get in Touch</h2>
+      <p class="intro-text">
+        Have questions about our products or services? Want to provide feedback? We'd love to hear from you! 
+        Reach out to our team using any of the contact methods below, and we'll get back to you as soon as possible.
+      </p>
+    </div>
+  </section>
+
+  <!-- CONTACT INFORMATION -->
+  <section class="section section-alt contact-methods" aria-labelledby="methods-title">
+    <div class="container">
+      <h2 id="methods-title" class="section-title">Contact Information</h2>
+      <div class="contact-grid">
+        {% for contact in contactDetails %}
+        <div class="contact-card">
+          <div class="contact-icon">
+            {% if contact.icon == "envelope" %}
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <rect x="2" y="4" width="20" height="16" rx="2"></rect>
+                <path d="m22 7-8.97 5.7a1.94 1.94 0 0 1-2.06 0L2 7"></path>
+              </svg>
+            {% elif contact.icon == "phone" %}
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M22 16.92v3a2 2 0 0 1-2.18 2 19.79 19.79 0 0 1-8.63-3.07 19.5 19.5 0 0 1-6-6 19.79 19.79 0 0 1-3.07-8.67A2 2 0 0 1 4.11 2h3a2 2 0 0 1 2 1.72 12.84 12.84 0 0 0 .7 2.81 2 2 0 0 1-.45 2.11L8.09 9.91a16 16 0 0 0 6 6l1.27-1.27a2 2 0 0 1 2.11-.45 12.84 12.84 0 0 0 2.81.7A2 2 0 0 1 22 16.92z"></path>
+              </svg>
+            {% elif contact.icon == "map-pin" %}
+              <svg width="40" height="40" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">
+                <path d="M21 10c0 7-9 13-9 13s-9-6-9-13a9 9 0 0 1 18 0z"></path>
+                <circle cx="12" cy="10" r="3"></circle>
+              </svg>
+            {% endif %}
+          </div>
+          <div class="contact-content">
+            <h3 class="contact-method">{{ contact.method }}</h3>
+            <p class="contact-value">{{ contact.value }}</p>
+          </div>
+        </div>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- RESPONSE TIME SECTION -->
+  <section class="section contact-response" aria-labelledby="response-title">
+    <div class="container">
+      <h2 id="response-title" class="section-title">Response Times</h2>
+      <div class="response-grid">
+        <div class="response-card">
+          <h3>Email Inquiries</h3>
+          <p>We aim to respond to all email inquiries within 24-48 business hours.</p>
+        </div>
+        <div class="response-card">
+          <h3>Phone Support</h3>
+          <p>Call us during business hours for immediate assistance. We're available Monday to Friday, 9am-5pm.</p>
+        </div>
+        <div class="response-card">
+          <h3>In-Person</h3>
+          <p>Visit our store location for personalized assistance and to see our full range of products.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="cta" aria-labelledby="cta-title">
+    <div class="container cta-inner">
+      <h2 id="cta-title">Ready to Explore Our Products?</h2>
+      <p>Browse our complete selection of premium pool and snooker equipment.</p>
+      <a class="btn btn-gold" href="/shop">Visit the Shop</a>
+    </div>
+  </section>
+
+{% endblock %}
