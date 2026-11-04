@@ -1,0 +1,89 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/about.css">
+{% endblock %}
+
+{% block content %}
+
+  <!-- HERO: About Us Title -->
+  <section class="about-hero" aria-labelledby="about-hero-title">
+    <div class="container about-hero-inner">
+      <h1 id="about-hero-title">About Cue Corner</h1>
+      <p class="about-hero-sub">Meet the Team Behind Your Perfect Shot</p>
+    </div>
+  </section>
+
+  <!-- MISSION STATEMENT -->
+  <section class="section about-mission" aria-labelledby="mission-title">
+    <div class="container">
+      <h2 id="mission-title" class="section-title">Our Mission</h2>
+      <p class="mission-text">
+        Cue Corner is dedicated to providing players of all levels with premium pool and snooker equipment. 
+        We believe that the right gear can enhance your game, and our mission is to make professional-quality 
+        equipment accessible to everyone. Run by players, for players, we bring passion, expertise, and 
+        integrity to everything we do.
+      </p>
+    </div>
+  </section>
+
+  <!-- MEET THE TEAM -->
+  <section class="section about-team" aria-labelledby="team-title">
+    <div class="container">
+      <h2 id="team-title" class="section-title">Meet the Team</h2>
+      <div class="team-grid">
+        {% for member in teamMembers %}
+        <article class="team-card">
+          <div class="team-image-wrapper">
+            <img 
+              src="{{ member.image }}" 
+              alt="Photo of {{ member.name }}" 
+              class="team-image"
+              loading="lazy">
+          </div>
+          <div class="team-content">
+            <h3 class="team-name">{{ member.name }}</h3>
+            <p class="team-role">{{ member.role }}</p>
+            <p class="team-bio">{{ member.bio }}</p>
+          </div>
+        </article>
+        {% endfor %}
+      </div>
+    </div>
+  </section>
+
+  <!-- WHY US -->
+  <section class="section section-alt about-why-us" aria-labelledby="why-title">
+    <div class="container">
+      <h2 id="why-title" class="section-title">Why Choose Cue Corner?</h2>
+      <div class="benefits-grid">
+        <div class="benefit-card">
+          <h3>Expert Knowledge</h3>
+          <p>Our team consists of experienced players who understand your needs and can provide expert recommendations.</p>
+        </div>
+        <div class="benefit-card">
+          <h3>Quality Products</h3>
+          <p>We stock only premium equipment from trusted manufacturers, ensuring you get the best value.</p>
+        </div>
+        <div class="benefit-card">
+          <h3>Customer First</h3>
+          <p>Your satisfaction is our priority. We're here to help before, during, and after your purchase.</p>
+        </div>
+        <div class="benefit-card">
+          <h3>Passion for the Game</h3>
+          <p>We're not just selling equipment—we're passionate about pool and snooker, just like you.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="cta" aria-labelledby="cta-title">
+    <div class="container cta-inner">
+      <h2 id="cta-title">Ready to Upgrade Your Game?</h2>
+      <p>Explore our full range of premium pool and snooker equipment.</p>
+      <a class="btn btn-gold" href="/shop">Visit the Shop</a>
+    </div>
+  </section>
+
+{% endblock %}
