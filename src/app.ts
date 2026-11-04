@@ -5,9 +5,11 @@ import { CartClient } from "./clients/cartClient";
 import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
+import { ReviewClient } from "./clients/reviewClient";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
 import { createContactRouter } from "./controllers/contactController";
+import { createTermsRouter } from "./controllers/termsController";
 import {
 	type CartOperations,
 	createCartRouter,
@@ -18,6 +20,7 @@ import {
 	type ProfileOperations,
 } from "./controllers/profileController";
 import { createCheckoutRouter } from "./controllers/checkoutController";
+import { createOrderHistoryRouter } from "./controllers/orderHistoryController";
 import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
 import { CheckoutService } from "./services/checkoutService";
@@ -28,6 +31,7 @@ import {
 	getCategories,
 	ProductService,
 } from "./services/productService";
+import { ReviewService } from "./services/reviewService";
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
@@ -48,7 +52,10 @@ export function createApp(
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
 	),
-	orderService: Pick<OrderService, "checkout" | "get"> = new OrderService(
+	orderService: Pick<
+		OrderService,
+		"checkout" | "get" | "list"
+	> = new OrderService(
 		new OrderClient(
 			process.env.API_BASE_URL ??
 				process.env.BACKEND_URL ??
@@ -61,6 +68,13 @@ export function createApp(
 			"http://localhost:3000",
 	),
 	checkoutService: CheckoutService = new CheckoutService(),
+	reviewService: Pick<ReviewService, "listMine" | "save"> = new ReviewService(
+		new ReviewClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
+	),
 ): Express {
 	const app = express();
 
@@ -106,8 +120,10 @@ export function createApp(
 				"/reset-pass",
 				"/admin",
 				"/profile",
+				"/orders",
 				"/about",
 				"/contact",
+				"/terms",
 			].includes(req.path)
 		) {
 			next();
@@ -130,6 +146,14 @@ export function createApp(
 	app.use("/profile", requireAuth, createProfileRouter(profileService));
 	app.use(["/checkout", "/orders"], requireAuth);
 	app.use(
+		createOrderHistoryRouter(
+			orderService,
+			reviewService,
+			cartService,
+			productService,
+		),
+	);
+	app.use(
 		createCheckoutRouter(
 			cartService,
 			profileService,
@@ -142,6 +166,7 @@ export function createApp(
 	app.use("/admin", createAdminRouter(productService, adminProducts));
 	app.use("/about", createAboutRouter());
 	app.use("/contact", createContactRouter());
+	app.use("/terms", createTermsRouter());
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";

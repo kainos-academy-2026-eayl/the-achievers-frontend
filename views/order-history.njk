@@ -1,0 +1,110 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/orders.css">
+{% endblock %}
+
+{% macro reviewPanel(order, item, index) %}
+  {% set key = order.id + ":" + item.productId %}
+  {% set formState = reviewForm if (reviewForm and reviewForm.key == key) else null %}
+  {% set rating = formState.values.rating if formState else (item.review.rating if item.review else 0) %}
+  {% set comment = formState.values.comment if formState else (item.review.comment if item.review else "") %}
+  {% set formId = "review-" + order.id + "-" + index %}
+  <details class="review-panel"{% if formState %} open{% endif %}>
+    <summary>{{ "Edit your review" if item.review else "Leave a Review" }}</summary>
+    <form class="review-form" action="/orders/{{ order.id | urlencode }}/reviews/{{ item.productId | urlencode }}" method="post" novalidate>
+      <input type="hidden" name="csrfToken" value="{{ csrfToken }}">
+      {% if formState %}
+        <p class="field-error" id="{{ formId }}-error" role="alert">{{ formState.error }}</p>
+      {% endif %}
+      <fieldset class="star-rating"{% if formState %} aria-describedby="{{ formId }}-error"{% endif %}>
+        <legend>Your rating</legend>
+        <div class="star-rating-options">
+          {% for star in [5, 4, 3, 2, 1] %}
+            <input type="radio" id="{{ formId }}-star-{{ star }}" name="rating" value="{{ star }}"{% if rating == star %} checked{% endif %}>
+            <label for="{{ formId }}-star-{{ star }}" title="{{ star }} star{{ 's' if star > 1 }}">
+              <span class="visually-hidden">{{ star }} star{{ 's' if star > 1 }}</span>
+            </label>
+          {% endfor %}
+        </div>
+      </fieldset>
+      <label for="{{ formId }}-comment">Your review <span class="optional">(optional)</span></label>
+      <textarea id="{{ formId }}-comment" name="comment" rows="4" maxlength="{{ maxCommentLength }}">{{ comment }}</textarea>
+      <button class="btn btn-green btn-small" type="submit">{{ "Save changes" if item.review else "Submit review" }}</button>
+    </form>
+  </details>
+{% endmacro %}
+
+{% block content %}
+  <section class="orders-page" aria-labelledby="orders-title">
+    <div class="container">
+      <a class="orders-back" href="/profile">&larr; Back to profile</a>
+      <h1 id="orders-title">Order History</h1>
+
+      {% if loadError %}
+        <div class="orders-message" role="alert">
+          <p>We can't load your orders right now. Please try again later.</p>
+          <a class="btn btn-gold" href="/orders">Try again</a>
+        </div>
+      {% else %}
+        {% if notice %}
+          <p class="orders-notice{{ ' orders-notice-error' if notice.error }}" role="{{ 'alert' if notice.error else 'status' }}">{{ notice.message }}</p>
+        {% endif %}
+        {% if formError %}
+          <p class="orders-notice orders-notice-error" role="alert">{{ formError }}</p>
+        {% endif %}
+        {% if reviewsUnavailable %}
+          <p class="orders-notice orders-notice-error" role="alert">We couldn't load your existing reviews, so the forms below may not show reviews you've already left.</p>
+        {% endif %}
+
+        {% if not orders.length %}
+          <div class="orders-message">
+            <h2>You haven't placed any orders yet</h2>
+            <p>When you place an order, it will appear here so you can track it, buy it again and leave reviews.</p>
+            <a class="btn btn-green" href="/shop">Start shopping</a>
+          </div>
+        {% else %}
+          <ol class="order-list">
+            {% for order in orders %}
+              <li class="order-card" id="order-{{ order.id }}">
+                <header class="order-card-header">
+                  <dl class="order-meta">
+                    <div><dt>Order number</dt><dd>{{ order.reference }}</dd></div>
+                    <div><dt>Order date</dt><dd><time datetime="{{ order.createdAt }}">{{ order.date }}</time></dd></div>
+                    <div><dt>Total</dt><dd>{{ order.total }}</dd></div>
+                  </dl>
+                  <span class="status-badge status-{{ order.statusKey }}">{{ order.statusLabel }}</span>
+                </header>
+
+                <ul class="order-items">
+                  {% for item in order.items %}
+                    <li class="order-item">
+                      <div class="order-item-row">
+                        <div class="product-image order-item-image" aria-hidden="true">
+                          <img src="/css/images/cc-icon.png" alt="" loading="lazy">
+                        </div>
+                        <div class="order-item-details">
+                          <p class="order-item-name">{{ item.name }}</p>
+                          <p class="order-item-quantity">Quantity: {{ item.quantity }}</p>
+                        </div>
+                        <strong class="order-item-subtotal">{{ item.subtotal }}</strong>
+                      </div>
+                      {% if item.reviewable %}
+                        {{ reviewPanel(order, item, loop.index) }}
+                      {% endif %}
+                    </li>
+                  {% endfor %}
+                </ul>
+
+                <form class="order-actions" action="/orders/{{ order.id | urlencode }}/buy-again" method="post">
+                  <input type="hidden" name="csrfToken" value="{{ csrfToken }}">
+                  <button class="btn btn-gold" type="submit">Buy Again</button>
+                </form>
+              </li>
+            {% endfor %}
+          </ol>
+        {% endif %}
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}
