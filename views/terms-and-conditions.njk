@@ -1,0 +1,89 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/terms.css">
+{% endblock %}
+
+{% block content %}
+
+  <!-- HERO: Terms & Conditions Title -->
+  <section class="terms-hero" aria-labelledby="terms-hero-title">
+    <div class="container terms-hero-inner">
+      <h1 id="terms-hero-title">Terms & Conditions</h1>
+      <p class="terms-hero-sub">The Rules of the Game at Cue Corner</p>
+    </div>
+  </section>
+
+  <!-- TERMS SECTIONS -->
+  <section class="section terms-content" aria-labelledby="terms-content-title">
+    <div class="container">
+      <div class="terms-grid">
+        
+        <!-- Section 1: Calluminator Disclaimer -->
+        <article class="terms-card">
+          <h2>The Calluminator Disclaimer</h2>
+          <p>Use of the Calluminator is at your own risk. We are not responsible for:</p>
+          <ul>
+            <li>Shots you miss with the Calluminator</li>
+            <li>Injuries sustained while pretending to be a professional player</li>
+            <li>Damage to venue furniture or other patrons</li>
+            <li>Your ego when you lose to someone with half your skill</li>
+          </ul>
+        </article>
+
+        <!-- Section 2: Refund Policy -->
+        <article class="terms-card">
+          <h2>Refund Policy</h2>
+          <p>We do not provide refunds. Ever. For any reason. Especially not because:</p>
+          <ul>
+            <li>You lost a tournament</li>
+            <li>The cue felt "weird"</li>
+            <li>You realized you're not as good as you thought</li>
+            <li>Mercury is in retrograde</li>
+          </ul>
+        </article>
+
+        <!-- Section 3: Support & Liability -->
+        <article class="terms-card">
+          <h2>Support & Liability</h2>
+          <p>Cue Corner provides zero customer support for:</p>
+          <ul>
+            <li>Physical injuries (bruises, black eyes, general pool hall drama)</li>
+            <li>Emotional distress from losing</li>
+            <li>Relationship damage caused by pool rage</li>
+            <li>Claims that "the cue was unbalanced"</li>
+          </ul>
+        </article>
+
+        <!-- Section 4: Responsible Use -->
+        <article class="terms-card">
+          <h2>Responsible Use</h2>
+          <p>Players must be responsible for their own safety and the safety of others. Swinging cues recklessly at other patrons is not our problem.</p>
+        </article>
+
+        <!-- Section 5: Use of Website -->
+        <article class="terms-card">
+          <h2>Use of Website</h2>
+          <p>By using this website, you agree to not blame us for your poor life choices, including but not limited to:</p>
+          <ul>
+            <li>Betting money you can't afford to lose</li>
+            <li>Using our products in ways that seem obviously dangerous</li>
+            <li>Expecting good customer service (we barely tolerate each other)</li>
+          </ul>
+        </article>
+
+      </div>
+    </div>
+  </section>
+
+  <!-- CALL TO ACTION -->
+  <section class="cta terms-cta" aria-labelledby="cta-title">
+    <div class="container cta-inner">
+      <h2 id="cta-title">Ready to Test Your Skills?</h2>
+      <p>Head to our shop and grab some premium equipment.</p>
+      <a class="btn btn-gold" href="/shop">Visit the Shop</a>
+    </div>
+  </section>
+
+{% endblock %}
+
