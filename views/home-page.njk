@@ -57,10 +57,13 @@
           </div>
           <h3>{{ product.name }}</h3>
           <p class="price">{{ product.price }}</p>
+          {% if product.inStock is not none %}
+            <p class="stock-status{% if not product.inStock %} out-of-stock{% endif %}" role="status">{% if product.inStock %}In stock{% else %}Out of stock{% endif %}</p>
+          {% endif %}
           <form action="/cart/items/add" method="post">
             <input type="hidden" name="productId" value="{{ product.id }}">
             <input type="hidden" name="quantity" value="1">
-            <button type="submit" class="btn btn-green" aria-label="Add {{ product.name }} to cart">Add to Cart</button>
+            <button type="submit" class="btn btn-green" aria-label="Add {{ product.name }} to cart"{% if product.inStock == false %} disabled{% endif %}>Add to Cart</button>
           </form>
         </article>
         {% endfor %}

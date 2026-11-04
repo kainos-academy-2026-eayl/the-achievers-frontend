@@ -49,6 +49,7 @@ function setup(role = "admin", exp = Math.floor(Date.now() / 1000) + 3600) {
 		new ProductService({ getAll }),
 		undefined,
 		undefined,
+		undefined,
 		new ProductClient("http://backend.test"),
 	);
 	const agent = request.agent(app);
