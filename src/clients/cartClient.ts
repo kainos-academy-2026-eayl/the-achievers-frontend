@@ -13,7 +13,8 @@ export class CartClient {
 		path: string,
 		body?: { productId: string; quantity: number } | { quantity: number },
 	): Promise<Response> {
-		const response = await fetch(new URL(path, this.baseUrl), {
+		const url = new URL(path, this.baseUrl);
+		const response = await fetch(url, {
 			method,
 			headers: {
 				"Content-Type": "application/json",

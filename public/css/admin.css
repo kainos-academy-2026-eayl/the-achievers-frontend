@@ -1,0 +1,81 @@
+.admin-dashboard {
+    padding-block: 2rem 4rem;
+}
+
+.admin-heading {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 1rem;
+    margin-bottom: 2rem;
+}
+
+.admin-heading h1 {
+    margin-block: 0;
+    color: var(--green-900);
+}
+
+.admin-eyebrow {
+    color: var(--green-700);
+    font-weight: 600;
+}
+
+.admin-notice {
+    background: var(--grey-100);
+    border-left: 4px solid var(--green-700);
+    border-radius: var(--radius);
+    padding: 1rem 1.5rem;
+    margin-block: 1.5rem;
+}
+
+.admin-notice h2 {
+    margin-top: 0;
+}
+
+.admin-stats {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(min(100%, 14rem), 1fr));
+    gap: 1rem;
+    margin-block: 2rem;
+}
+
+.admin-stats > div {
+    border: 1px solid var(--green-700);
+    border-radius: var(--radius);
+    padding: 1.5rem;
+}
+
+.admin-stats dt {
+    color: var(--grey-600);
+    font-weight: 600;
+}
+
+.admin-stats dd {
+    margin: 0;
+    font-size: 2rem;
+    font-weight: 700;
+    color: var(--green-900);
+}
+
+.admin-table-scroll {
+    overflow-x: auto;
+}
+
+.admin-table {
+    width: 100%;
+    border-collapse: collapse;
+    text-align: left;
+}
+
+.admin-table th,
+.admin-table td {
+    padding: 1rem;
+    border-bottom: 1px solid var(--grey-600);
+    overflow-wrap: anywhere;
+}
+
+.admin-table thead {
+    background: var(--green-900);
+    color: var(--white);
+}

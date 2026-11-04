@@ -10,4 +10,6 @@ export interface CartViewModel {
 	items: CartItemViewModel[];
 	count: number;
 	total: string;
+	shipping: string;
+	grandTotal: string;
 }

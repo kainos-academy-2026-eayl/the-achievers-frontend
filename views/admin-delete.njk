@@ -1,0 +1,23 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/admin.css">
+{% endblock %}
+
+{% block content %}
+<div class="container admin-dashboard">
+  <h1>Delete product</h1>
+  {% if errorMessage %}
+    <p class="admin-notice" role="alert">{{ errorMessage }}</p>
+    <a class="btn btn-green" href="/admin">Return to dashboard</a>
+  {% else %}
+    <p>Are you sure you want to delete <strong>{{ product.name }}</strong>?</p>
+    <p class="admin-notice">This permanently removes the product from the shop and all shopping carts. This cannot be undone.</p>
+    <form method="post" action="{{ deletePath }}">
+      <input type="hidden" name="csrfToken" value="{{ csrfToken }}">
+      <button class="btn btn-green" type="submit">Permanently delete product</button>
+      <a href="/admin">Cancel</a>
+    </form>
+  {% endif %}
+</div>
+{% endblock %}

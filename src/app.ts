@@ -2,13 +2,24 @@ import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
 import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
+import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
+import { ProfileClient } from "./clients/profileClient";
+import { createAdminRouter } from "./controllers/adminController";
 import {
 	type CartOperations,
 	createCartRouter,
 	readCartId,
 } from "./controllers/cartController";
+import {
+	createProfileRouter,
+	type ProfileOperations,
+} from "./controllers/profileController";
+import { createCheckoutRouter } from "./controllers/checkoutController";
+import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
+import { CheckoutService } from "./services/checkoutService";
+import { OrderService } from "./services/orderService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
 	filterByCategory,
@@ -62,12 +73,25 @@ export function createApp(
 	app.use(express.static("public"));
 	app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 
-	nunjucks.configure("views", {
+	const env = nunjucks.configure("views", {
 		autoescape: true,
 		express: app,
 		// tsx watch only restarts on .ts changes, so templates must not be cached in dev.
 		noCache: process.env.NODE_ENV !== "production",
 	});
+
+	env.addFilter("findBy", (arr: unknown[], key: string, value: unknown) => {
+		if (!Array.isArray(arr)) return null;
+		return (
+			arr.find(
+				(item) =>
+					item &&
+					typeof item === "object" &&
+					(item as Record<string, unknown>)[key] === value,
+			) || null
+		);
+	});
+
 	app.set("view engine", "njk");
 
 	registerAuth(
@@ -80,9 +104,15 @@ export function createApp(
 	app.use(async (req, res, next) => {
 		if (
 			req.method !== "GET" ||
-			!["/", "/shop", "/login", "/registration", "/reset-pass"].includes(
-				req.path,
-			)
+			![
+				"/",
+				"/shop",
+				"/login",
+				"/registration",
+				"/reset-pass",
+				"/admin",
+				"/profile",
+			].includes(req.path)
 		) {
 			next();
 			return;
@@ -100,14 +130,20 @@ export function createApp(
 		next();
 	});
 
-	registerAuth(
-		app,
-		process.env.API_BASE_URL ??
-			process.env.BACKEND_URL ??
-			"http://localhost:3000",
+	app.use("/cart", createCartRouter(cartService));
+	app.use("/profile", requireAuth, createProfileRouter(profileService));
+	app.use(["/checkout", "/orders"], requireAuth);
+	app.use(
+		createCheckoutRouter(
+			cartService,
+			profileService,
+			orderService,
+			productService,
+			checkoutService,
+		),
 	);
 
-	app.use("/cart", createCartRouter(cartService));
+	app.use("/admin", createAdminRouter(productService, adminProducts));
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
@@ -125,6 +161,20 @@ export function createApp(
 				products: [],
 				loadError: true,
 			});
+		}
+	});
+
+	app.get("/categories", async (_req: Request, res: Response) => {
+		const title = "Categories | Cue Corner";
+		try {
+			const allProducts = await productService.getAll();
+			res.render("categories", {
+				title,
+				categories: getCategories(allProducts),
+			});
+		} catch (error) {
+			console.error("Failed to load categories", error);
+			res.status(502).render("categories", { title, loadError: true });
 		}
 	});
 
@@ -252,42 +302,40 @@ export function createApp(
 				? safeWordHint
 				: "";
 
-		if (
-			!trimmedName ||
-			!/^[^\s@]+@[^\s@]+$/.test(trimmedEmail) ||
-			typeof password !== "string" ||
-			!password ||
-			typeof confirmPassword !== "string" ||
-			!confirmPassword
-		) {
-			return res.status(400).render("registration", {
-				title: "Register | Cue Corner",
-				registrationError: true,
-				registrationMessage:
-					"Please provide a name, valid email address, password, and password confirmation.",
-				name: trimmedName,
-				email: trimmedEmail,
-				safeWordHint: selectedHint,
-			});
+		const errors: string[] = [];
+		if (!trimmedName) {
+			errors.push("Enter your name.");
+		}
+		if (!trimmedEmail) {
+			errors.push("Enter your email address.");
+		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+			errors.push("Enter a valid email address, for example name@example.com.");
+		}
+		if (typeof password !== "string" || !password) {
+			errors.push("Enter a password.");
+		} else if (password.length < 12) {
+			errors.push("Your password must be at least 12 characters long.");
+		} else if (password.length > 128) {
+			errors.push("Your password must be no more than 128 characters long.");
+		}
+		if (typeof confirmPassword !== "string" || !confirmPassword) {
+			errors.push("Confirm your password.");
+		} else if (password !== confirmPassword) {
+			errors.push("Your passwords do not match.");
+		}
+		if (!selectedHint) {
+			errors.push("Choose a safe word hint.");
+		}
+		if (typeof safeWord !== "string" || !safeWord.trim()) {
+			errors.push("Enter a safe word.");
 		}
 
-		if (password !== confirmPassword) {
+		if (errors.length > 0) {
 			return res.status(400).render("registration", {
 				title: "Register | Cue Corner",
 				registrationError: true,
-				registrationMessage: "Your passwords do not match.",
-				name: trimmedName,
-				email: trimmedEmail,
-				safeWordHint: selectedHint,
-			});
-		}
-
-		if (!selectedHint || typeof safeWord !== "string" || !safeWord.trim()) {
-			return res.status(400).render("registration", {
-				title: "Register | Cue Corner",
-				registrationError: true,
-				registrationMessage:
-					"Please choose a safe word hint and enter a safe word.",
+				registrationMessage: "Please fix the following:",
+				registrationErrors: errors,
 				name: trimmedName,
 				email: trimmedEmail,
 				safeWordHint: selectedHint,
@@ -309,6 +357,18 @@ export function createApp(
 					}),
 				},
 			);
+
+			if (backendResponse.status === 409) {
+				return res.status(409).render("registration", {
+					title: "Register | Cue Corner",
+					registrationError: true,
+					registrationMessage:
+						"An account with this email already exists. Try logging in instead.",
+					name: trimmedName,
+					email: trimmedEmail,
+					safeWordHint: selectedHint,
+				});
+			}
 
 			if (!backendResponse.ok) {
 				console.error(

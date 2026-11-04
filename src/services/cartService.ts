@@ -23,7 +23,6 @@ export class CartService {
 		if (!isRecord(data) || !Array.isArray(data.items)) {
 			throw new Error("Unexpected cart response format");
 		}
-
 		let totalPence = 0;
 		let count = 0;
 		const productIds = new Set<string>();
@@ -71,7 +70,36 @@ export class CartService {
 			};
 		});
 
-		return { items, count, total: currency.format(totalPence / 100) };
+		const { estimatedShippingCost } = data;
+		if (
+			typeof estimatedShippingCost !== "number" ||
+			!Number.isFinite(estimatedShippingCost) ||
+			estimatedShippingCost < 0
+		) {
+			throw new Error("Invalid cart shipping estimate");
+		}
+		const shippingPence = Math.round(estimatedShippingCost * 100);
+		if (
+			Math.abs(estimatedShippingCost * 100 - shippingPence) > 0.000001 ||
+			!Number.isSafeInteger(shippingPence)
+		) {
+			throw new Error(
+				"Cart shipping estimate exceeds supported precision or range",
+			);
+		}
+		const grandTotalPence = totalPence + shippingPence;
+		if (!Number.isSafeInteger(grandTotalPence)) {
+			throw new Error("Cart total exceeds supported precision or range");
+		}
+
+		return {
+			items,
+			count,
+			total: currency.format(totalPence / 100),
+			shipping:
+				shippingPence === 0 ? "Free" : currency.format(shippingPence / 100),
+			grandTotal: currency.format(grandTotalPence / 100),
+		};
 	}
 
 	add(cartId: string, productId: string, quantity: number): Promise<void> {

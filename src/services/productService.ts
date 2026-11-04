@@ -15,8 +15,17 @@ export function toProductViewModel(raw: unknown): ProductViewModel | null {
 		return null;
 	}
 
-	const { id, name, description, category, price, rating, reviewCount } =
-		raw as Record<string, unknown>;
+	const {
+		id,
+		name,
+		description,
+		category,
+		price,
+		stock,
+		inStock,
+		rating,
+		reviewCount,
+	} = raw as Record<string, unknown>;
 
 	if (
 		!isNonEmptyString(id) ||
@@ -39,6 +48,12 @@ export function toProductViewModel(raw: unknown): ProductViewModel | null {
 		description: description.trim(),
 		category: category.trim(),
 		price: priceFormatter.format(price),
+		inStock:
+			typeof stock === "number" && Number.isSafeInteger(stock) && stock >= 0
+				? stock > 0
+				: typeof inStock === "boolean"
+					? inStock
+					: null,
 		rating: validRating,
 		ratingPercent: validRating === null ? 0 : (validRating / 5) * 100,
 		reviewCount:
