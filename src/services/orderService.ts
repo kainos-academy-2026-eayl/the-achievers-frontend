@@ -102,7 +102,17 @@ function mapOrder(raw: unknown): OrderViewModel {
 }
 
 export class OrderService {
-	constructor(private readonly client: Pick<OrderClient, "checkout" | "get">) {}
+	constructor(
+		private readonly client: Pick<OrderClient, "checkout" | "get" | "list">,
+	) {}
+
+	async list(accessToken: string): Promise<OrderViewModel[]> {
+		const data = await this.client.list(accessToken);
+		if (!Array.isArray(data)) {
+			throw new Error("Unexpected orders response format");
+		}
+		return data.map(mapOrder);
+	}
 
 	async checkout(
 		accessToken: string,

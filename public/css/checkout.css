@@ -299,6 +299,12 @@
     border-bottom: 1px solid #dfe5e2;
 }
 
+.confirmation-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 1rem;
+}
+
 @media (max-width: 760px) {
 
     .checkout-layout,
