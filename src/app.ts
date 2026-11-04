@@ -5,6 +5,7 @@ import { CartClient } from "./clients/cartClient";
 import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
+import { ReviewClient } from "./clients/reviewClient";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
 import {
@@ -17,6 +18,7 @@ import {
 	type ProfileOperations,
 } from "./controllers/profileController";
 import { createCheckoutRouter } from "./controllers/checkoutController";
+import { createOrderHistoryRouter } from "./controllers/orderHistoryController";
 import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
 import { CheckoutService } from "./services/checkoutService";
@@ -27,6 +29,7 @@ import {
 	getCategories,
 	ProductService,
 } from "./services/productService";
+import { ReviewService } from "./services/reviewService";
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
@@ -47,7 +50,10 @@ export function createApp(
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
 	),
-	orderService: Pick<OrderService, "checkout" | "get"> = new OrderService(
+	orderService: Pick<
+		OrderService,
+		"checkout" | "get" | "list"
+	> = new OrderService(
 		new OrderClient(
 			process.env.API_BASE_URL ??
 				process.env.BACKEND_URL ??
@@ -60,6 +66,13 @@ export function createApp(
 			"http://localhost:3000",
 	),
 	checkoutService: CheckoutService = new CheckoutService(),
+	reviewService: Pick<ReviewService, "listMine" | "save"> = new ReviewService(
+		new ReviewClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
+	),
 ): Express {
 	const app = express();
 
@@ -105,6 +118,7 @@ export function createApp(
 				"/reset-pass",
 				"/admin",
 				"/profile",
+				"/orders",
 				"/about",
 			].includes(req.path)
 		) {
@@ -127,6 +141,14 @@ export function createApp(
 	app.use("/cart", createCartRouter(cartService));
 	app.use("/profile", requireAuth, createProfileRouter(profileService));
 	app.use(["/checkout", "/orders"], requireAuth);
+	app.use(
+		createOrderHistoryRouter(
+			orderService,
+			reviewService,
+			cartService,
+			productService,
+		),
+	);
 	app.use(
 		createCheckoutRouter(
 			cartService,

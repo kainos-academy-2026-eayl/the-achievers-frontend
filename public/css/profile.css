@@ -10,7 +10,7 @@
 
 .dashboard-layout {
     display: grid;
-    grid-template-columns: 220px minmax(0, 1fr);
+    grid-template-columns: 260px minmax(0, 1fr);
     gap: 1.5rem;
     align-items: start;
 }
@@ -92,6 +92,12 @@
 .dashboard-nav a:focus-visible {
     background: rgba(255, 255, 255, 0.12);
     color: var(--gold);
+}
+
+.dashboard-orders-link {
+    display: block;
+    margin-top: 1rem;
+    text-align: center;
 }
 
 .dashboard-content h1 {

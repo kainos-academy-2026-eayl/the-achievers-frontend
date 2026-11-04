@@ -85,6 +85,9 @@
                 <li><a href="#security">Save changes</a></li>
               </ul>
             </nav>
+            {% if currentUser %}
+              <a class="btn btn-gold dashboard-orders-link" href="/orders">View Order History</a>
+            {% endif %}
           </aside>
 
           <div class="dashboard-content">
