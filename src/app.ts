@@ -18,11 +18,13 @@ import {
 	readCartId,
 } from "./controllers/cartController";
 import { createCheckoutRouter } from "./controllers/checkoutController";
+import { createContactRouter } from "./controllers/contactController";
 import { createOrderHistoryRouter } from "./controllers/orderHistoryController";
 import {
 	createProfileRouter,
 	type ProfileOperations,
 } from "./controllers/profileController";
+import { createTermsRouter } from "./controllers/termsController";
 import {
 	createResetPasswordRouter,
 	type ResetPasswordOperations,
@@ -182,6 +184,9 @@ export function createApp(
 		),
 	);
 
+	app.use("/about", createAboutRouter());
+	app.use("/contact", createContactRouter());
+	app.use("/terms", createTermsRouter());
 	app.use("/admin", createAdminRouter(productService, adminProducts));
 	app.use("/reset-pass", createResetPasswordRouter(resetPasswordService));
 	app.use("/about", createAboutRouter());
