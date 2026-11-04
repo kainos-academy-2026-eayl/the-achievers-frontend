@@ -5,6 +5,7 @@ import { CartClient } from "./clients/cartClient";
 import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
+import { ResetPasswordClient } from "./clients/resetPasswordClient";
 import { createAdminRouter } from "./controllers/adminController";
 import {
 	type CartOperations,
@@ -16,6 +17,10 @@ import {
 	type ProfileOperations,
 } from "./controllers/profileController";
 import { createCheckoutRouter } from "./controllers/checkoutController";
+import {
+	createResetPasswordRouter,
+	type ResetPasswordOperations,
+} from "./controllers/resetPasswordController";
 import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
 import { CheckoutService } from "./services/checkoutService";
@@ -67,6 +72,11 @@ export function createApp(
 		"http://localhost:3000",
 	),
 	checkoutService: CheckoutService = new CheckoutService(),
+	resetPasswordService: ResetPasswordOperations = new ResetPasswordClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+	),
 ): Express {
 	const app = express();
 
@@ -144,6 +154,7 @@ export function createApp(
 	);
 
 	app.use("/admin", createAdminRouter(productService, adminProducts));
+	app.use("/reset-pass", createResetPasswordRouter(resetPasswordService));
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";

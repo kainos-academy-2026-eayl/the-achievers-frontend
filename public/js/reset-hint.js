@@ -1,4 +1,4 @@
-çconst details = document.getElementById("reset-hint");
+const details = document.getElementById("reset-hint");
 const hintText = document.getElementById("reset-hint-text");
 const emailInput = document.getElementById("registration-email");
 

@@ -8,9 +8,14 @@
   <section class="auth-page" aria-labelledby="reset-title">
   <div class="auth-card">
     <h1 id="reset-title">Reset your password</h1>
-    <p class="auth-notice" id="reset-notice">Enter your email and the safe word associated with your account.</p>
+    <p class="auth-notice" id="reset-notice" role="{{ 'alert' if resetError else 'status' }}">{{ resetMessage | default("Enter your email and the safe word associated with your account.") }}</p>
+    {% if resetErrors %}
+      <ul class="auth-errors">
+        {% for error in resetErrors %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+    {% endif %}
 
-    <form class="auth-form" aria-describedby="reset-notice" onsubmit="event.preventDefault()">
+    <form class="auth-form" id="reset-form" action="/reset-pass" method="post" aria-describedby="reset-notice">
 
       <div class="auth-field">
         <label for="registration-email">Email</label>
@@ -19,10 +24,24 @@
 
       <div class="auth-field">
         <label for="safe-word">Safe Word</label>
-        <input id="safe-word" name="safe-word" type="safe-word" autocomplete="safe-word" required>
+        <input id="safe-word" name="safeWord" type="password" autocomplete="off" required>
       </div>
 
-      <button class="btn btn-green" type="submit">Submit</button>
+      {# Hidden and disabled until the email and safe word are verified, so they are not validated or submitted early. #}
+      <div class="auth-form-group" id="reset-new-password-fields" {{ 'hidden' if not showNewPasswordFields }}>
+        <div class="auth-field">
+          <label for="reset-new-password">New password</label>
+          <input id="reset-new-password" name="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="reset-new-password-hint" {{ 'disabled' if not showNewPasswordFields }} required>
+          <p class="auth-hint" id="reset-new-password-hint">Must be at least 12 characters.</p>
+        </div>
+
+        <div class="auth-field">
+          <label for="reset-confirm-password">Confirm new password</label>
+          <input id="reset-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" {{ 'disabled' if not showNewPasswordFields }} required>
+        </div>
+      </div>
+
+      <button class="btn btn-green" id="reset-submit" type="submit">{{ 'Reset password' if showNewPasswordFields else 'Submit' }}</button>
     </form>
 
     <details class="reset-hint" id="reset-hint">
@@ -34,4 +53,5 @@
   </div>
   </section>
   <script src="/js/reset-hint.js" defer></script>
+  <script src="/js/reset-password.js" defer></script>
 {% endblock %}

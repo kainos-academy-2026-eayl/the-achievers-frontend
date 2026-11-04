@@ -42,6 +42,15 @@
     min-width: 0;
 }
 
+.auth-form-group {
+    display: grid;
+    gap: 1.25rem;
+}
+
+.auth-form-group[hidden] {
+    display: none;
+}
+
 .auth-errors {
     margin: -1rem 0 1.75rem;
     padding-left: 1.25rem;
@@ -84,6 +93,10 @@
 
 .auth-field select {
     cursor: pointer;
+}
+
+.auth-field input[readonly] {
+    background: var(--grey-100);
 }
 
 .auth-field input:focus,
