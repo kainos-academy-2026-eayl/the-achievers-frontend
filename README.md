@@ -85,6 +85,35 @@ The backend must check the safe word against its stored hash on **both** calls, 
 
 ### Admin dashboard
 
+#### Product creation (KAN-36)
+
+Admins can select **Create product** on the dashboard to open
+`GET /admin/products/new`. The form requires a name (up to 200 characters),
+description (2000), category (100) and price in pounds. Category is free text;
+price must be between `0.00` and `21474836.47` with at most two decimal places.
+Stock is deliberately excluded.
+
+The form submits to `POST /admin/products`, checks a session-bound CSRF token
+and validates fields before forwarding JSON to `POST /api/products` on the
+backend. The stored JWT is sent server-to-server, never included in the page.
+The backend independently validates the data and verifies admin authorization.
+Anonymous/expired sessions are redirected to login; non-admins receive `403`.
+
+Successful creation redirects to `/admin?created=1` with a success message and
+a freshly loaded catalogue. The product also appears in the shop. Validation
+errors show linked field messages and preserve escaped input for correction.
+Backend `401` clears login state; `403` shows "Not allowed". Network failures,
+unexpected responses and service errors show an explicit error and advise
+checking the catalogue before retrying, because a failed response does not
+guarantee the backend did not save the product. Cancel returns to the dashboard.
+Creation pages use `Cache-Control: no-store`.
+
+Run `npm test -- tests/adminCreate.test.ts tests/admin.test.ts tests/shop.test.ts`.
+The tests cover required fields, length/price boundaries, admin access, CSRF,
+backend errors and catalogue refreshes. No running backend is required.
+
+#### Product deletion
+
 `GET /admin` shows product/category totals and a product table with Delete links.
 Each link opens `GET /admin/products/:id/delete`, a confirmation page naming the
 product and warning that it will be permanently removed from the shop and all

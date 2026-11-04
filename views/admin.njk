@@ -17,16 +17,22 @@
         <h1>Admin dashboard</h1>
         <p>Welcome, {{ currentUser.name }}. Here is your catalogue overview.</p>
       </div>
-      <a class="btn btn-green" href="/shop">View shop</a>
+      <div>
+        <a class="btn btn-green" href="/admin/products/new">Create product</a>
+        <a class="btn btn-green" href="/shop">View shop</a>
+      </div>
     </header>
 
     <aside class="admin-notice" aria-labelledby="admin-availability">
       <h2 id="admin-availability">Catalogue management</h2>
-      <p>You can permanently delete products from the catalogue. Product editing, order management and user management are not available yet.</p>
+      <p>You can create products and permanently delete products from the catalogue. Product editing, order management and user management are not available yet.</p>
     </aside>
 
     {% if deleted %}
       <p class="admin-notice" role="status">Product deleted successfully.</p>
+    {% endif %}
+    {% if created %}
+      <p class="admin-notice" role="status">Product created successfully.</p>
     {% endif %}
 
     {% if loadError %}

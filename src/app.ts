@@ -7,6 +7,7 @@ import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
 import { ResetPasswordClient } from "./clients/resetPasswordClient";
 import { createAdminRouter } from "./controllers/adminController";
+import { createAboutRouter } from "./controllers/aboutController";
 import {
 	type CartOperations,
 	createCartRouter,
@@ -66,7 +67,7 @@ export function createApp(
 				"http://localhost:3000",
 		),
 	),
-	adminProducts: Pick<ProductClient, "delete"> = new ProductClient(
+	adminProducts: Pick<ProductClient, "delete" | "create"> = new ProductClient(
 		process.env.API_BASE_URL ??
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
@@ -122,6 +123,7 @@ export function createApp(
 				"/reset-pass",
 				"/admin",
 				"/profile",
+				"/about",
 			].includes(req.path)
 		) {
 			next();
@@ -155,6 +157,7 @@ export function createApp(
 
 	app.use("/admin", createAdminRouter(productService, adminProducts));
 	app.use("/reset-pass", createResetPasswordRouter(resetPasswordService));
+	app.use("/about", createAboutRouter());
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
