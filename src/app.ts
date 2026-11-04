@@ -7,6 +7,7 @@ import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
+import { createContactRouter } from "./controllers/contactController";
 import {
 	type CartOperations,
 	createCartRouter,
@@ -106,6 +107,7 @@ export function createApp(
 				"/admin",
 				"/profile",
 				"/about",
+				"/contact",
 			].includes(req.path)
 		) {
 			next();
@@ -139,6 +141,7 @@ export function createApp(
 
 	app.use("/admin", createAdminRouter(productService, adminProducts));
 	app.use("/about", createAboutRouter());
+	app.use("/contact", createContactRouter());
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
