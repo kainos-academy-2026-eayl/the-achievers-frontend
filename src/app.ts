@@ -8,6 +8,7 @@ import { ProfileClient } from "./clients/profileClient";
 import { ReviewClient } from "./clients/reviewClient";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
+import { createContactRouter } from "./controllers/contactController";
 import { createTermsRouter } from "./controllers/termsController";
 import {
 	type CartOperations,
@@ -121,6 +122,7 @@ export function createApp(
 				"/profile",
 				"/orders",
 				"/about",
+				"/contact",
 				"/terms",
 			].includes(req.path)
 		) {
@@ -163,6 +165,7 @@ export function createApp(
 
 	app.use("/admin", createAdminRouter(productService, adminProducts));
 	app.use("/about", createAboutRouter());
+	app.use("/contact", createContactRouter());
 	app.use("/terms", createTermsRouter());
 
 	app.get("/", async (_req: Request, res: Response) => {
