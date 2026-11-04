@@ -83,6 +83,29 @@
     text-align: center;
 }
 
+.reset-hint {
+    margin: 1.75rem 0 0;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--gold);
+    text-align: center;
+}
+
+.reset-hint summary {
+    color: var(--green-700);
+    font-weight: 600;
+    text-decoration: underline;
+    text-underline-offset: 3px;
+    cursor: pointer;
+}
+
+.reset-hint summary:hover {
+    color: var(--green-900);
+}
+
+.reset-hint .auth-notice {
+    margin: 0.75rem 0 0;
+}
+
 .auth-switch a {
     color: var(--green-700);
     font-weight: 600;

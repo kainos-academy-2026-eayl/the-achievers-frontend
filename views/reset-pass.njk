@@ -8,18 +8,30 @@
   <section class="auth-page" aria-labelledby="reset-title">
   <div class="auth-card">
     <h1 id="reset-title">Reset your password</h1>
-    <p class="auth-notice" id="reset-notice">Enter the email address associated with your account. Demo only: this form does not send a reset email.</p>
+    <p class="auth-notice" id="reset-notice">Enter your email and the safe word associated with your account.</p>
 
     <form class="auth-form" aria-describedby="reset-notice" onsubmit="event.preventDefault()">
+
       <div class="auth-field">
-        <label for="reset-email">Email</label>
-        <input id="reset-email" name="email" type="email" autocomplete="email" required>
+        <label for="registration-email">Email</label>
+        <input id="registration-email" name="email" type="email" autocomplete="email" value="{{ email | default('') }}" required>
       </div>
 
-      <button class="btn btn-green" type="submit">Send reset link</button>
+      <div class="auth-field">
+        <label for="safe-word">Safe Word</label>
+        <input id="safe-word" name="safe-word" type="safe-word" autocomplete="safe-word" required>
+      </div>
+
+      <button class="btn btn-green" type="submit">Submit</button>
     </form>
+
+    <details class="reset-hint" id="reset-hint">
+      <summary>Show hint</summary>
+      <p class="auth-notice" id="reset-hint-text" role="status" aria-live="polite"></p>
+    </details>
 
     <p class="auth-switch"><a href="/login">Back to login</a></p>
   </div>
   </section>
+  <script src="/js/reset-hint.js" defer></script>
 {% endblock %}

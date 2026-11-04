@@ -15,22 +15,47 @@ import {
 	getCategories,
 	ProductService,
 } from "./services/productService";
+const SAFE_WORD_QUESTIONS: Record<string, string> = {
+	"mothers-maiden-name": "What is your mother's maiden name?",
+	"favourite-movie": "What is your favourite movie?",
+	"first-pet": "What was your first pet's name?",
+	"childhood-friend": "What did you call your childhood bestfriend?",
+	holiday: "What is your dream holiday location?",
+};
 
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
 			process.env.API_BASE_URL ??
-				process.env.BACKEND_URL ??
-				"http://localhost:3000",
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 		),
 	),
 	cartService: CartOperations = new CartService(
 		new CartClient(
 			process.env.API_BASE_URL ??
-				process.env.BACKEND_URL ??
-				"http://localhost:3000",
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 		),
 	),
+	profileService: ProfileOperations = new ProfileClient(
+		process.env.API_BASE_URL ??
+		process.env.BACKEND_URL ??
+		"http://localhost:3000",
+	),
+	orderService: Pick<OrderService, "checkout" | "get"> = new OrderService(
+		new OrderClient(
+			process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+		),
+	),
+	adminProducts: Pick<ProductClient, "delete"> = new ProductClient(
+		process.env.API_BASE_URL ??
+		process.env.BACKEND_URL ??
+		"http://localhost:3000",
+	),
+	checkoutService: CheckoutService = new CheckoutService(),
 ): Express {
 	const app = express();
 
@@ -44,6 +69,13 @@ export function createApp(
 		noCache: process.env.NODE_ENV !== "production",
 	});
 	app.set("view engine", "njk");
+
+	registerAuth(
+		app,
+		process.env.API_BASE_URL ??
+		process.env.BACKEND_URL ??
+		"http://localhost:3000",
+	);
 
 	app.use(async (req, res, next) => {
 		if (
@@ -156,6 +188,55 @@ export function createApp(
 		res.render("reset-pass", { title: "Reset Password | Cue Corner" });
 	});
 
+	app.get("/reset-pass/hint", async (req: Request, res: Response) => {
+		res.set("Cache-Control", "no-store");
+		const email =
+			typeof req.query.email === "string" ? req.query.email.trim() : "";
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+			return res.status(400).json({ error: "Enter a valid email address." });
+		}
+
+		try {
+			const url = new URL(
+				"/api/safe-word-hint",
+				process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+			);
+			url.searchParams.set("email", email);
+			const backendResponse = await fetch(url, {
+				signal: AbortSignal.timeout(5000),
+			});
+			const data: unknown =
+				backendResponse.status === 200 ? await backendResponse.json() : null;
+			const hint =
+				typeof data === "object" &&
+					data !== null &&
+					"safeWordHint" in data &&
+					typeof data.safeWordHint === "string"
+					? data.safeWordHint
+					: "";
+
+			if (backendResponse.status !== 200 && backendResponse.status !== 404) {
+				console.error(`Hint backend returned status ${backendResponse.status}.`);
+				return res
+					.status(502)
+					.json({ error: "Unable to load your hint. Please try again." });
+			}
+			if (!Object.hasOwn(SAFE_WORD_QUESTIONS, hint)) {
+				return res
+					.status(404)
+					.json({ error: "We couldn't find a hint for that email." });
+			}
+			return res.json({ question: SAFE_WORD_QUESTIONS[hint] });
+		} catch (error) {
+			console.error("Unable to reach the hint backend:", error);
+			return res
+				.status(502)
+				.json({ error: "Unable to load your hint. Please try again." });
+		}
+	});
+
 	app.get("/registration", (_req: Request, res: Response) => {
 		res.render("registration", { title: "Register | Cue Corner" });
 	});
@@ -167,13 +248,7 @@ export function createApp(
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
 		const selectedHint =
 			typeof safeWordHint === "string" &&
-			[
-				"mothers-maiden-name",
-				"favourite-movie",
-				"first-pet",
-				"childhood-friend",
-				"holiday",
-			].includes(safeWordHint)
+				Object.hasOwn(SAFE_WORD_QUESTIONS, safeWordHint)
 				? safeWordHint
 				: "";
 
