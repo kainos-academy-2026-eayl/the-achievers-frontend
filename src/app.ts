@@ -43,33 +43,33 @@ export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
 			process.env.API_BASE_URL ??
-			process.env.BACKEND_URL ??
-			"http://localhost:3000",
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
 		),
 	),
 	cartService: CartOperations = new CartService(
 		new CartClient(
 			process.env.API_BASE_URL ??
-			process.env.BACKEND_URL ??
-			"http://localhost:3000",
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
 		),
 	),
 	profileService: ProfileOperations = new ProfileClient(
 		process.env.API_BASE_URL ??
-		process.env.BACKEND_URL ??
-		"http://localhost:3000",
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	),
 	orderService: Pick<OrderService, "checkout" | "get"> = new OrderService(
 		new OrderClient(
 			process.env.API_BASE_URL ??
-			process.env.BACKEND_URL ??
-			"http://localhost:3000",
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
 		),
 	),
 	adminProducts: Pick<ProductClient, "delete"> = new ProductClient(
 		process.env.API_BASE_URL ??
-		process.env.BACKEND_URL ??
-		"http://localhost:3000",
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	),
 	checkoutService: CheckoutService = new CheckoutService(),
 	resetPasswordService: ResetPasswordOperations = new ResetPasswordClient(
@@ -107,8 +107,8 @@ export function createApp(
 	registerAuth(
 		app,
 		process.env.API_BASE_URL ??
-		process.env.BACKEND_URL ??
-		"http://localhost:3000",
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	);
 
 	app.use(async (req, res, next) => {
@@ -261,8 +261,8 @@ export function createApp(
 			const url = new URL(
 				"/api/safe-word-hint",
 				process.env.API_BASE_URL ??
-				process.env.BACKEND_URL ??
-				"http://localhost:3000",
+					process.env.BACKEND_URL ??
+					"http://localhost:3000",
 			);
 			url.searchParams.set("email", email);
 			const backendResponse = await fetch(url, {
@@ -272,14 +272,16 @@ export function createApp(
 				backendResponse.status === 200 ? await backendResponse.json() : null;
 			const hint =
 				typeof data === "object" &&
-					data !== null &&
-					"safeWordHint" in data &&
-					typeof data.safeWordHint === "string"
+				data !== null &&
+				"safeWordHint" in data &&
+				typeof data.safeWordHint === "string"
 					? data.safeWordHint
 					: "";
 
 			if (backendResponse.status !== 200 && backendResponse.status !== 404) {
-				console.error(`Hint backend returned status ${backendResponse.status}.`);
+				console.error(
+					`Hint backend returned status ${backendResponse.status}.`,
+				);
 				return res
 					.status(502)
 					.json({ error: "Unable to load your hint. Please try again." });
@@ -309,7 +311,7 @@ export function createApp(
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
 		const selectedHint =
 			typeof safeWordHint === "string" &&
-				Object.hasOwn(SAFE_WORD_QUESTIONS, safeWordHint)
+			Object.hasOwn(SAFE_WORD_QUESTIONS, safeWordHint)
 				? safeWordHint
 				: "";
 
