@@ -327,17 +327,8 @@ export function createApp(
 					: "";
 
 			if (backendResponse.status !== 200 && backendResponse.status !== 404) {
-<<<<<<< HEAD
-				console.error(
-					`Hint backend returned status ${backendResponse.status}.`,
-				);
-				return res
-					.status(502)
-					.json({ error: "Unable to load your hint. Please try again." });
-=======
 				console.error(`Hint backend returned status ${backendResponse.status}.`);
 				return renderHint(502, "Unable to load your hint. Please try again.");
->>>>>>> 51d91c9 (removed client side javascript)
 			}
 			if (!Object.hasOwn(SAFE_WORD_QUESTIONS, hint)) {
 				return renderHint(404, "There is no account linked to that email. Use an email that is linked to an existing account.");
