@@ -11,6 +11,10 @@ export type ProfileOperations = Pick<ProfileClient, "get" | "update">;
 
 const title = "My Profile | Cue Corner";
 const form = new ProfileFormHelper();
+const currency = new Intl.NumberFormat("en-GB", {
+	style: "currency",
+	currency: "GBP",
+});
 
 function renderLoggedOut(res: Response): void {
 	res.status(401).render("profile", { title, notLoggedIn: true });
@@ -39,6 +43,7 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 			res.render("profile", {
 				title,
 				account: form.accountSummary(profile),
+				creditBalance: currency.format(profile.creditBalance),
 				values: form.profileToForm(profile),
 				updated: req.query.updated === "1",
 			});
@@ -73,20 +78,30 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 				typeof body.currentPassword === "string" ? body.currentPassword : "",
 		};
 
-		const renderErrors = (
+		const renderErrors = async (
 			status: number,
 			fieldErrors: FieldErrors,
 			formError?: string,
-		) =>
-			res.status(status).render("profile", {
+		) => {
+			let creditBalance: string | undefined;
+			try {
+				creditBalance = currency.format(
+					(await profiles.get(auth.accessToken)).creditBalance,
+				);
+			} catch {
+				creditBalance = undefined;
+			}
+			return res.status(status).render("profile", {
 				title,
 				account: form.accountSummary(auth.user),
+				creditBalance,
 				values,
 				fieldErrors: form.toFormErrors(fieldErrors),
 				formError:
 					formError ??
 					"Your changes have not been saved. Please fix the errors below.",
 			});
+		};
 
 		try {
 			const saved = await profiles.update(auth.accessToken, update);
@@ -102,12 +117,12 @@ export function createProfileRouter(profiles: ProfileOperations): Router {
 					(error.status === 400 || error.status === 409) &&
 					Object.keys(error.fieldErrors).length > 0
 				) {
-					renderErrors(error.status, error.fieldErrors);
+					await renderErrors(error.status, error.fieldErrors);
 					return;
 				}
 			}
 			console.error("Failed to update profile", error);
-			renderErrors(
+			await renderErrors(
 				502,
 				{},
 				"We couldn't save your changes right now. Please try again.",

@@ -1,0 +1,38 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/home-page.css">
+  <link rel="stylesheet" href="/css/shop.css">
+{% endblock %}
+
+{% block content %}
+  <section class="section" aria-labelledby="categories-title">
+    <div class="container">
+      <nav class="breadcrumb" aria-label="Breadcrumb">
+        <ol>
+          <li><a href="/">Home</a></li>
+          <li aria-current="page">Categories</li>
+        </ol>
+      </nav>
+
+      <h1 id="categories-title" class="section-title">Categories</h1>
+
+      {% if loadError %}
+        <div class="catalogue-message" role="alert">
+          <h2>We can't show categories right now</h2>
+          <p>Something went wrong while loading the catalogue. Please try again later.</p>
+        </div>
+      {% elif not categories.length %}
+        <p role="status">No categories available.</p>
+      {% else %}
+        <div class="grid grid-4">
+          {% for category in categories %}
+            <a class="card category-card" href="/shop?category={{ category | urlencode }}">
+              <h2>{{ category }}</h2>
+            </a>
+          {% endfor %}
+        </div>
+      {% endif %}
+    </div>
+  </section>
+{% endblock %}

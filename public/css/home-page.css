@@ -110,15 +110,19 @@
 }
 
 .placeholder-case {
-    background: linear-gradient(135deg, var(--black), #3a3a3a);
-}
-
-.placeholder-ball {
-    background: radial-gradient(circle at 35% 35%, #ffffff 0 12%, var(--gold) 13% 60%, var(--gold-dark) 100%);
+    background: linear-gradient(135deg, var(--black), var(--grey-600));
 }
 
 .placeholder-acc {
     background: linear-gradient(135deg, var(--green-700), var(--black));
+}
+
+.placeholder-calluminator {
+    background: linear-gradient(135deg, var(--gold), var(--gold-dark));
+}
+
+.placeholder-protective {
+    background: linear-gradient(135deg, var(--green-700), var(--green-900));
 }
 
 /* ===== Call-to-action banner ===== */

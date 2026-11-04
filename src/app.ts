@@ -2,8 +2,10 @@ import express, { type Express, type Request, type Response } from "express";
 import nunjucks from "nunjucks";
 import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
+import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
+import { createAdminRouter } from "./controllers/adminController";
 import {
 	type CartOperations,
 	createCartRouter,
@@ -13,8 +15,11 @@ import {
 	createProfileRouter,
 	type ProfileOperations,
 } from "./controllers/profileController";
-import { requireAdmin, requireAuth } from "./middleware/authMiddleware";
+import { createCheckoutRouter } from "./controllers/checkoutController";
+import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
+import { CheckoutService } from "./services/checkoutService";
+import { OrderService } from "./services/orderService";
 import { MAX_QUERY_LENGTH, searchProducts } from "./services/productSearch";
 import {
 	filterByCategory,
@@ -41,18 +46,44 @@ export function createApp(
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
 	),
+	orderService: Pick<OrderService, "checkout" | "get"> = new OrderService(
+		new OrderClient(
+			process.env.API_BASE_URL ??
+				process.env.BACKEND_URL ??
+				"http://localhost:3000",
+		),
+	),
+	adminProducts: Pick<ProductClient, "delete"> = new ProductClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+	),
+	checkoutService: CheckoutService = new CheckoutService(),
 ): Express {
 	const app = express();
 
 	app.use(express.static("public"));
 	app.use(express.urlencoded({ extended: false, limit: "10kb" }));
 
-	nunjucks.configure("views", {
+	const env = nunjucks.configure("views", {
 		autoescape: true,
 		express: app,
 		// tsx watch only restarts on .ts changes, so templates must not be cached in dev.
 		noCache: process.env.NODE_ENV !== "production",
 	});
+
+	env.addFilter("findBy", (arr: unknown[], key: string, value: unknown) => {
+		if (!Array.isArray(arr)) return null;
+		return (
+			arr.find(
+				(item) =>
+					item &&
+					typeof item === "object" &&
+					(item as Record<string, unknown>)[key] === value,
+			) || null
+		);
+	});
+
 	app.set("view engine", "njk");
 
 	registerAuth(
@@ -93,22 +124,18 @@ export function createApp(
 
 	app.use("/cart", createCartRouter(cartService));
 	app.use("/profile", requireAuth, createProfileRouter(profileService));
+	app.use(["/checkout", "/orders"], requireAuth);
+	app.use(
+		createCheckoutRouter(
+			cartService,
+			profileService,
+			orderService,
+			productService,
+			checkoutService,
+		),
+	);
 
-	app.get("/admin", requireAdmin, async (_req: Request, res: Response) => {
-		res.set("Cache-Control", "no-store");
-		const title = "Admin dashboard | Cue Corner";
-		try {
-			const products = await productService.getAll();
-			return res.render("admin", {
-				title,
-				products,
-				categories: getCategories(products),
-			});
-		} catch (error) {
-			console.error("Failed to load admin catalogue overview", error);
-			return res.status(502).render("admin", { title, loadError: true });
-		}
-	});
+	app.use("/admin", createAdminRouter(productService, adminProducts));
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
@@ -126,6 +153,20 @@ export function createApp(
 				products: [],
 				loadError: true,
 			});
+		}
+	});
+
+	app.get("/categories", async (_req: Request, res: Response) => {
+		const title = "Categories | Cue Corner";
+		try {
+			const allProducts = await productService.getAll();
+			res.render("categories", {
+				title,
+				categories: getCategories(allProducts),
+			});
+		} catch (error) {
+			console.error("Failed to load categories", error);
+			res.status(502).render("categories", { title, loadError: true });
 		}
 	});
 

@@ -62,7 +62,25 @@ On success, the frontend regenerates the session ID and stores the access token,
 
 ### Admin dashboard
 
-`GET /admin` is a read-only overview of the existing public product catalogue, showing product/category totals and a product table. Empty catalogues show zero totals; backend failures show a retryable error rather than invented statistics. Product editing, order management, and user management are not implemented because no admin backend endpoints exist.
+`GET /admin` shows product/category totals and a product table with Delete links.
+Each link opens `GET /admin/products/:id/delete`, a confirmation page naming the
+product and warning that it will be permanently removed from the shop and all
+carts. Cancel returns to the dashboard without changing anything.
+
+Confirming submits `POST /admin/products/:id/delete` with a session-bound CSRF
+token. Both routes require an admin session. The frontend sends the stored JWT
+server-to-server to `DELETE /api/products/:id`; the backend independently verifies
+admin access. The JWT is never included in the form or browser scripts.
+Success redirects back to the refreshed dashboard with a success message.
+Backend `401` clears the login state and redirects to login; `403` shows
+"Not allowed"; `404` explains that the product is gone. Other failures show a
+retryable error, never a success message. Admin pages are not cached.
+
+Empty catalogues show zero totals; catalogue failures show a retryable error
+rather than invented statistics. Product editing, order management and user
+management remain unavailable. Deletion requires the matching backend changes;
+there is no database migration. Re-running the backend seed can restore seeded
+products.
 
 The frontend decodes the JWT received directly from a successful backend login to read `role` (`admin` or `user`) and `exp`. It checks the expected issuer (`the-achievers-backend`), audience (`the-achievers-api`), and string subject; malformed or expired tokens produce a login-service error. This is **not signature verification** and does not replace backend authorization. Tokens supplied in browser headers or URLs are not used to establish a session. The session expires at the earlier of JWT `exp` and login time plus `expiresIn`. Role changes take effect after logging in again or session expiry.
 
