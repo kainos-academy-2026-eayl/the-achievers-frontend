@@ -1,0 +1,227 @@
+/* About Us Page Styling */
+
+.about-hero {
+	background: linear-gradient(135deg, #1a472a 0%, #2d5e45 100%);
+	color: white;
+	padding: 60px 0;
+	text-align: center;
+}
+
+.about-hero-inner {
+	max-width: 800px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+.about-hero-inner h1 {
+	font-size: clamp(2rem, 5vw, 3.5rem);
+	margin-bottom: 10px;
+	font-weight: 700;
+	text-align: center;
+}
+
+.about-hero-sub {
+	font-size: clamp(1rem, 2.5vw, 1.5rem);
+	opacity: 0.95;
+	margin-bottom: 0;
+	text-align: center;
+}
+
+/* Mission Statement Section */
+.about-mission {
+	background-color: #f9f9f9;
+	text-align: center;
+	padding-block: clamp(3.5rem, 8vw, 6rem);
+}
+
+.mission-text {
+	font-size: 1.1rem;
+	line-height: 1.8;
+	color: #333;
+	max-width: 800px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+/* Team Grid */
+.team-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 2rem;
+	margin-top: 2rem;
+}
+
+.team-card {
+	background: white;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.team-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.team-image-wrapper {
+	width: 100%;
+	height: 280px;
+	overflow: hidden;
+	background-color: #e8e8e8;
+}
+
+.team-image {
+	width: 100%;
+	height: 100%;
+	object-fit: cover;
+	display: block;
+}
+
+.team-content {
+	padding: 1.5rem;
+	text-align: center;
+}
+
+.team-name {
+	font-size: 1.3rem;
+	font-weight: 700;
+	margin-bottom: 0.25rem;
+	color: #1a472a;
+	text-align: center;
+}
+
+.team-role {
+	font-size: 0.95rem;
+	color: #d4af37;
+	font-weight: 600;
+	margin-bottom: 1rem;
+	text-transform: uppercase;
+	letter-spacing: 0.5px;
+	text-align: center;
+}
+
+.team-bio {
+	font-size: 0.95rem;
+	line-height: 1.6;
+	color: #555;
+	margin-bottom: 0;
+	text-align: center;
+}
+
+/* Benefits Grid */
+.benefits-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	gap: 1.5rem;
+	margin-top: 2rem;
+}
+
+.benefit-card {
+	background: white;
+	padding: 2rem;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	text-align: center;
+}
+
+.benefit-card h3 {
+	font-size: 1.2rem;
+	color: #1a472a;
+	margin-bottom: 1rem;
+	font-weight: 700;
+	text-align: center;
+}
+
+.benefit-card p {
+	font-size: 0.95rem;
+	line-height: 1.6;
+	color: #555;
+	margin-bottom: 0;
+	text-align: center;
+}
+
+/* Center the CTA button */
+.about-why-us {
+	text-align: center;
+}
+
+.about-why-us .section-title {
+	text-align: center;
+}
+
+.cta {
+	text-align: center;
+	margin-bottom: 3rem;
+}
+
+.cta .btn {
+	display: inline-block;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.about-hero {
+		padding: 40px 0;
+	}
+
+	.about-hero-inner h1 {
+		font-size: 2rem;
+	}
+
+	.about-hero-sub {
+		font-size: 1.1rem;
+	}
+
+	.team-grid {
+		grid-template-columns: 1fr;
+		gap: 1.5rem;
+	}
+
+	.team-image-wrapper {
+		height: 240px;
+	}
+
+	.benefits-grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	.benefit-card {
+		padding: 1.5rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.about-hero {
+		padding: 30px 0;
+	}
+
+	.about-hero-inner h1 {
+		font-size: 1.5rem;
+	}
+
+	.about-hero-sub {
+		font-size: 0.95rem;
+	}
+
+	.mission-text {
+		font-size: 1rem;
+	}
+
+	.team-content {
+		padding: 1rem;
+	}
+
+	.team-name {
+		font-size: 1.1rem;
+	}
+
+	.benefit-card {
+		padding: 1rem;
+	}
+
+	.benefit-card h3 {
+		font-size: 1rem;
+	}
+}
