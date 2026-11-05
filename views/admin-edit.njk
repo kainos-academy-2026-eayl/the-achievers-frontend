@@ -1,0 +1,59 @@
+{% extends "layout.njk" %}
+
+{% block styles %}
+  <link rel="stylesheet" href="/css/auth.css">
+{% endblock %}
+
+{% block content %}
+<section class="auth-page" aria-labelledby="edit-product-title">
+  <div class="auth-card">
+    <h1 id="edit-product-title">Edit product</h1>
+    {% if loadError %}
+      <p role="alert">{{ loadError }}</p>
+      <a href="/admin">Return to catalogue</a>
+    {% else %}
+      <p class="auth-notice">All fields are required. Prices are in pounds (GBP).</p>
+      {% if formError %}
+        <div role="alert">
+          <p>{{ formError }}</p>
+          <ul class="auth-errors">
+            {% for field, message in fieldErrors %}
+              <li><a href="#product-{{ field }}">{{ message }}</a></li>
+            {% endfor %}
+          </ul>
+        </div>
+      {% endif %}
+      <form class="auth-form" action="{{ editPath }}" method="post">
+        <input type="hidden" name="csrfToken" value="{{ csrfToken }}">
+        <div class="auth-field">
+          <label for="product-name">Name</label>
+          <input id="product-name" name="name" type="text" maxlength="200" value="{{ values.name }}" required{% if fieldErrors.name %} aria-invalid="true" aria-describedby="product-name-error"{% endif %}>
+          {% if fieldErrors.name %}<p id="product-name-error">{{ fieldErrors.name }}</p>{% endif %}
+        </div>
+        <div class="auth-field">
+          <label for="product-description">Description</label>
+          <textarea id="product-description" name="description" rows="5" maxlength="2000" required{% if fieldErrors.description %} aria-invalid="true" aria-describedby="product-description-error"{% endif %}>{{ values.description }}</textarea>
+          {% if fieldErrors.description %}<p id="product-description-error">{{ fieldErrors.description }}</p>{% endif %}
+        </div>
+        <div class="auth-field">
+          <label for="product-category">Category</label>
+          <input id="product-category" name="category" type="text" maxlength="100" value="{{ values.category }}" required{% if fieldErrors.category %} aria-invalid="true" aria-describedby="product-category-error"{% endif %}>
+          {% if fieldErrors.category %}<p id="product-category-error">{{ fieldErrors.category }}</p>{% endif %}
+        </div>
+        <div class="auth-field">
+          <label for="product-price">Price (GBP)</label>
+          <input id="product-price" name="price" type="number" inputmode="decimal" min="0" max="21474836.47" step="0.01" value="{{ values.price }}" required{% if fieldErrors.price %} aria-invalid="true" aria-describedby="product-price-error"{% endif %}>
+          {% if fieldErrors.price %}<p id="product-price-error">{{ fieldErrors.price }}</p>{% endif %}
+        </div>
+        <div class="auth-field">
+          <label for="product-stock">Stock</label>
+          <input id="product-stock" name="stock" type="number" inputmode="numeric" min="0" max="2147483647" step="1" value="{{ values.stock }}" required{% if fieldErrors.stock %} aria-invalid="true" aria-describedby="product-stock-error"{% endif %}>
+          {% if fieldErrors.stock %}<p id="product-stock-error">{{ fieldErrors.stock }}</p>{% endif %}
+        </div>
+        <button class="btn btn-green" type="submit">Save changes</button>
+        <a href="/admin">Cancel and return to catalogue</a>
+      </form>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -89,6 +89,29 @@ Run `npm test -- tests/adminCreate.test.ts tests/admin.test.ts tests/shop.test.t
 The tests cover required fields, length/price boundaries, admin access, CSRF,
 backend errors and catalogue refreshes. No running backend is required.
 
+#### Product editing
+
+Select **Edit** beside a product on the admin dashboard to open
+`GET /admin/products/:id/edit`. The form loads the current name, description,
+category, price in pounds and stock directly from the backend. All five fields
+are required; text and price limits match product creation. Stock must be a whole
+number between `0` and `2147483647`.
+
+**Save changes** submits `POST /admin/products/:id/edit`. After checking admin
+access, the session-bound CSRF token and field validation, the frontend sends
+the complete set of fields to `PUT /api/products/:id`, with the JWT kept
+server-side. Success redirects to `/admin?updated=1` and reloads the catalogue.
+Cancel returns to the dashboard without saving.
+
+Validation errors preserve escaped values and show linked field messages.
+A missing/deleted product shows `404`; backend `401` clears the session and
+redirects to login, and `403` shows "Not allowed". Service failures and unexpected
+responses never claim success and advise checking the catalogue before retrying.
+Edit pages use `Cache-Control: no-store`.
+
+Run `npm test -- tests/adminEdit.test.ts tests/adminCreate.test.ts tests/admin.test.ts`
+to check editing and existing catalogue management without a running backend.
+
 #### Product deletion
 
 `GET /admin` shows product/category totals and a product table with Delete links.
@@ -106,8 +129,8 @@ Backend `401` clears the login state and redirects to login; `403` shows
 retryable error, never a success message. Admin pages are not cached.
 
 Empty catalogues show zero totals; catalogue failures show a retryable error
-rather than invented statistics. Product editing, order management and user
-management remain unavailable. Deletion requires the matching backend changes;
+rather than invented statistics. Order management and user management remain
+unavailable. Product management requires the matching backend changes;
 there is no database migration. Re-running the backend seed can restore seeded
 products.
 

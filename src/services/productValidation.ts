@@ -7,6 +7,30 @@ export const PRODUCT_FIELDS = [
 export type ProductField = (typeof PRODUCT_FIELDS)[number];
 export type ProductInput = Record<ProductField, string>;
 export type ProductFieldErrors = Partial<Record<ProductField, string>>;
+export const PRODUCT_EDIT_FIELDS = [...PRODUCT_FIELDS, "stock"] as const;
+export type ProductEditInput = ProductInput & { stock: string };
+export type ProductEditFieldErrors = Partial<
+	Record<(typeof PRODUCT_EDIT_FIELDS)[number], string>
+>;
+
+export function validateProductEditInput(body: unknown): {
+	values: ProductEditInput;
+	fieldErrors: ProductEditFieldErrors;
+} {
+	const { values, fieldErrors } = validateProductInput(body);
+	const stock =
+		typeof body === "object" &&
+		body !== null &&
+		"stock" in body &&
+		typeof body.stock === "string"
+			? body.stock.trim()
+			: "";
+	const errors: ProductEditFieldErrors = { ...fieldErrors };
+	if (!/^\d+$/.test(stock) || Number(stock) > 2147483647) {
+		errors.stock = "Enter a whole stock quantity between 0 and 2,147,483,647";
+	}
+	return { values: { ...values, stock }, fieldErrors: errors };
+}
 
 export function validateProductInput(body: unknown): {
 	values: ProductInput;
