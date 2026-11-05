@@ -62,7 +62,10 @@ export function createApp(
 				"http://localhost:3000",
 		),
 	),
-	adminProducts: Pick<ProductClient, "delete" | "create"> = new ProductClient(
+	adminProducts: Pick<
+		ProductClient,
+		"delete" | "create" | "getForEdit" | "update"
+	> = new ProductClient(
 		process.env.API_BASE_URL ??
 			process.env.BACKEND_URL ??
 			"http://localhost:3000",
