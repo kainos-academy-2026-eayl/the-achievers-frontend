@@ -92,8 +92,12 @@
                 <button class="product-details-trigger" type="button" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-category="{{ product.category }}" data-product-description="{{ product.description }}" aria-haspopup="dialog" aria-label="View details for {{ product.name }}">
                   <span class="visually-hidden">View product details</span>
                 </button>
-                <div class="product-image" aria-hidden="true">
-                  <img src="/css/images/cc-icon.png" alt="" loading="lazy">
+                <div class="product-image{% if product.imageUrl %} has-photo{% endif %}" aria-hidden="true">
+                  {% if product.imageUrl %}
+                    <img class="product-photo" src="{{ product.imageUrl }}" alt="" loading="lazy">
+                  {% else %}
+                    <img src="/css/images/cc-icon.png" alt="" loading="lazy">
+                  {% endif %}
                 </div>
 
                 <div class="product-body">

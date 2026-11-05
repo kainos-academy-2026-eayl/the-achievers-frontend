@@ -8,4 +8,9 @@ export interface ProductViewModel {
 	rating: number | null;
 	ratingPercent: number;
 	reviewCount: number;
+	imageUrl: string | null;
+}
+
+export function productImagePath(productId: string, imageId: string): string {
+	return `/media/products/${encodeURIComponent(productId)}/images/${encodeURIComponent(imageId)}`;
 }

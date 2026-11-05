@@ -53,6 +53,42 @@
         <button class="btn btn-green" type="submit">Save changes</button>
         <a href="/admin">Cancel and return to catalogue</a>
       </form>
+
+      {% if imageNotice %}<p class="auth-notice" role="status">{{ imageNotice }}</p>{% endif %}
+      {% if imageError %}<p role="alert">{{ imageError }}</p>{% endif %}
+      {% if images is defined %}
+        <section class="image-manager" aria-labelledby="product-images-title">
+          <h2 id="product-images-title">Product images</h2>
+          {% if images.length %}
+            <ul class="image-list" role="list">
+              {% for image in images %}
+                <li class="image-item">
+                  <img class="image-thumb" src="{{ image.url }}" alt="Product image {{ loop.index }}" loading="lazy">
+                  <form class="image-form" action="{{ image.replacePath }}" method="post" enctype="multipart/form-data">
+                    <input type="hidden" name="csrfToken" value="{{ csrfToken }}">
+                    <label for="replace-image-{{ loop.index }}">Replace image {{ loop.index }}</label>
+                    <input id="replace-image-{{ loop.index }}" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+                    <button class="btn" type="submit">Replace</button>
+                  </form>
+                  <form action="{{ image.deletePath }}" method="post">
+                    <input type="hidden" name="csrfToken" value="{{ csrfToken }}">
+                    <button class="btn" type="submit">Remove image {{ loop.index }}</button>
+                  </form>
+                </li>
+              {% endfor %}
+            </ul>
+          {% else %}
+            <p>This product has no images yet.</p>
+          {% endif %}
+          <form class="image-form" action="{{ imageUploadPath }}" method="post" enctype="multipart/form-data">
+            <input type="hidden" name="csrfToken" value="{{ csrfToken }}">
+            <label for="upload-image">Add an image</label>
+            <input id="upload-image" name="image" type="file" accept="image/jpeg,image/png,image/webp" required>
+            <p class="auth-notice">JPEG, PNG or WebP, up to 20 MB.</p>
+            <button class="btn btn-green" type="submit">Upload image</button>
+          </form>
+        </section>
+      {% endif %}
     {% endif %}
   </div>
 </section>

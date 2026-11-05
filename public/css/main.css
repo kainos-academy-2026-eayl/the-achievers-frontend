@@ -65,6 +65,20 @@ ul {
     transition: transform 0.3s ease;
 }
 
+/* Real product photos replace the stand-in icon */
+.product-image.has-photo {
+    place-items: stretch;
+    overflow: hidden;
+}
+
+.product-image.has-photo img.product-photo {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+    opacity: 1;
+    filter: none;
+}
+
 /* ===== Accessibility helpers ===== */
 .visually-hidden {
     position: absolute;
