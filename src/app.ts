@@ -5,7 +5,7 @@ import { CartClient } from "./clients/cartClient";
 import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
-import { ReviewClient } from "./clients/reviewClient";
+import { ReviewApiError, ReviewClient } from "./clients/reviewClient";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
 import {
@@ -66,7 +66,8 @@ export function createApp(
 			"http://localhost:3000",
 	),
 	checkoutService: CheckoutService = new CheckoutService(),
-	reviewService: Pick<ReviewService, "listMine" | "save"> = new ReviewService(
+	reviewService: Pick<ReviewService, "listMine" | "save"> &
+		Partial<Pick<ReviewService, "listForProduct">> = new ReviewService(
 		new ReviewClient(
 			process.env.API_BASE_URL ??
 				process.env.BACKEND_URL ??
@@ -248,6 +249,34 @@ export function createApp(
 				categories: [],
 				loadError: true,
 			});
+		}
+	});
+
+	app.get("/api/products/:productId/reviews", async (req, res) => {
+		res.set("Cache-Control", "no-store");
+		if (!reviewService.listForProduct) {
+			return res.status(503).json({ error: "Reviews are unavailable." });
+		}
+		try {
+			const reviews = (
+				await reviewService.listForProduct(
+					req.params.productId,
+					req.session.auth?.accessToken,
+				)
+			).filter((review) => review.productId === req.params.productId);
+			const averageRating = reviews.length
+				? reviews.reduce((total, review) => total + review.rating, 0) /
+					reviews.length
+				: null;
+			return res.json({ reviews, averageRating, reviewCount: reviews.length });
+		} catch (error) {
+			if (error instanceof ReviewApiError && error.status === 401) {
+				return res
+					.status(401)
+					.json({ error: "Sign in to view product reviews." });
+			}
+			console.error("Failed to load product reviews", error);
+			return res.status(502).json({ error: "Reviews could not be loaded." });
 		}
 	});
 
