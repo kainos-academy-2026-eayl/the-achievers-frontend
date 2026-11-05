@@ -3,7 +3,7 @@ import nunjucks from "nunjucks";
 import { registerAuth } from "./auth";
 import { CartClient } from "./clients/cartClient";
 import { OrderClient } from "./clients/orderClient";
-import { ProductClient } from "./clients/productClient";
+import { ProductApiError, ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
 import { ReviewClient } from "./clients/reviewClient";
 import { createAdminRouter } from "./controllers/adminController";
@@ -64,7 +64,13 @@ export function createApp(
 	),
 	adminProducts: Pick<
 		ProductClient,
-		"delete" | "create" | "getForEdit" | "update"
+		| "delete"
+		| "create"
+		| "getForEdit"
+		| "update"
+		| "uploadImage"
+		| "replaceImage"
+		| "deleteImage"
 	> = new ProductClient(
 		process.env.API_BASE_URL ??
 			process.env.BACKEND_URL ??
@@ -77,6 +83,11 @@ export function createApp(
 				process.env.BACKEND_URL ??
 				"http://localhost:3000",
 		),
+	),
+	productMedia: Pick<ProductClient, "fetchImage"> = new ProductClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	),
 ): Express {
 	const app = express();
@@ -170,6 +181,28 @@ export function createApp(
 	app.use("/about", createAboutRouter());
 	app.use("/contact", createContactRouter());
 	app.use("/terms", createTermsRouter());
+
+	app.get("/media/products/:productId/images/:imageId", async (req, res) => {
+		try {
+			const image = await productMedia.fetchImage(
+				req.params.productId,
+				req.params.imageId,
+			);
+			res.set({
+				"Content-Type": image.contentType,
+				"Cache-Control": "no-cache",
+				"X-Content-Type-Options": "nosniff",
+			});
+			res.send(image.body);
+		} catch (error) {
+			if (error instanceof ProductApiError && error.status === 404) {
+				res.status(404).end();
+				return;
+			}
+			console.error("Failed to load product image", error);
+			res.status(502).end();
+		}
+	});
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";

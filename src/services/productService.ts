@@ -1,5 +1,8 @@
 import type { ProductClient } from "../clients/productClient";
-import type { ProductViewModel } from "../models/productViewModel";
+import {
+	type ProductViewModel,
+	productImagePath,
+} from "../models/productViewModel";
 
 const priceFormatter = new Intl.NumberFormat("en-GB", {
 	style: "currency",
@@ -8,6 +11,22 @@ const priceFormatter = new Intl.NumberFormat("en-GB", {
 
 function isNonEmptyString(value: unknown): value is string {
 	return typeof value === "string" && value.trim() !== "";
+}
+
+function firstImageUrl(productId: string, images: unknown): string | null {
+	if (!Array.isArray(images)) {
+		return null;
+	}
+	const first: unknown = images[0];
+	if (
+		typeof first !== "object" ||
+		first === null ||
+		!("id" in first) ||
+		!isNonEmptyString(first.id)
+	) {
+		return null;
+	}
+	return productImagePath(productId, first.id);
 }
 
 export function toProductViewModel(raw: unknown): ProductViewModel | null {
@@ -25,6 +44,7 @@ export function toProductViewModel(raw: unknown): ProductViewModel | null {
 		inStock,
 		rating,
 		reviewCount,
+		images,
 	} = raw as Record<string, unknown>;
 
 	if (
@@ -62,6 +82,7 @@ export function toProductViewModel(raw: unknown): ProductViewModel | null {
 			reviewCount >= 0
 				? reviewCount
 				: 0,
+		imageUrl: firstImageUrl(id, images),
 	};
 }
 

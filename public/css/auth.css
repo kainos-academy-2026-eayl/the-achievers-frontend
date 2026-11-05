@@ -116,3 +116,38 @@
 .auth-switch a:hover {
     color: var(--green-900);
 }
+
+.image-manager {
+    margin-top: 2rem;
+    padding-top: 1.25rem;
+    border-top: 1px solid var(--gold);
+}
+
+.image-list {
+    list-style: none;
+    padding: 0;
+    margin: 0 0 1.5rem;
+    display: grid;
+    gap: 1rem;
+}
+
+.image-item {
+    display: grid;
+    gap: 0.75rem;
+    padding: 0.75rem;
+    border: 1px solid var(--grey-600);
+    border-radius: 6px;
+}
+
+.image-thumb {
+    width: 100%;
+    max-width: 240px;
+    height: auto;
+    border-radius: 4px;
+    object-fit: cover;
+}
+
+.image-form {
+    display: grid;
+    gap: 0.5rem;
+}

@@ -89,8 +89,12 @@
           {% for product in products %}
             <li>
               <article class="product-tile" aria-labelledby="product-{{ product.id }}">
-                <div class="product-image" aria-hidden="true">
-                  <img src="/css/images/cc-icon.png" alt="" loading="lazy">
+                <div class="product-image{% if product.imageUrl %} has-photo{% endif %}" aria-hidden="true">
+                  {% if product.imageUrl %}
+                    <img class="product-photo" src="{{ product.imageUrl }}" alt="" loading="lazy">
+                  {% else %}
+                    <img src="/css/images/cc-icon.png" alt="" loading="lazy">
+                  {% endif %}
                 </div>
 
                 <div class="product-body">
