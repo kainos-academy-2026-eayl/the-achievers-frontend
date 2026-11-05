@@ -5,6 +5,8 @@ import { requireAdmin } from "../middleware/authMiddleware";
 import { getCategories, type ProductService } from "../services/productService";
 import {
 	type ProductFieldErrors,
+	type ProductEditFieldErrors,
+	validateProductEditInput,
 	validateProductInput,
 } from "../services/productValidation";
 
@@ -12,6 +14,10 @@ const title = "Admin dashboard | Cue Corner";
 
 function deletePath(id: string): string {
 	return `/admin/products/${encodeURIComponent(id)}/delete`;
+}
+
+function editPath(id: string): string {
+	return `/admin/products/${encodeURIComponent(id)}/edit`;
 }
 
 function getCsrfToken(req: Request): string {
@@ -30,7 +36,10 @@ function hasValidCsrfToken(req: Request): boolean {
 
 export function createAdminRouter(
 	products: Pick<ProductService, "getAll">,
-	productClient: Pick<ProductClient, "delete" | "create">,
+	productClient: Pick<
+		ProductClient,
+		"delete" | "create" | "getForEdit" | "update"
+	>,
 ): Router {
 	const router = Router();
 	router.use((_req, res, next) => {
@@ -47,10 +56,12 @@ export function createAdminRouter(
 				products: catalogue.map((product) => ({
 					...product,
 					deletePath: deletePath(product.id),
+					editPath: editPath(product.id),
 				})),
 				categories: getCategories(catalogue),
 				deleted: req.query.deleted === "1",
 				created: req.query.created === "1",
+				updated: req.query.updated === "1",
 			});
 		} catch (error) {
 			console.error("Failed to load admin catalogue overview", error);
@@ -118,6 +129,99 @@ export function createAdminRouter(
 				}
 			}
 			console.error("Failed to create product", error);
+			renderErrors(
+				502,
+				"We could not confirm that your product was saved. Check the catalogue before trying again.",
+			);
+		}
+	});
+
+	router.get("/products/:id/edit", async (req, res) => {
+		try {
+			const values = await productClient.getForEdit(req.params.id);
+			res.render("admin-edit", {
+				title: "Edit product | Cue Corner",
+				values,
+				editPath: editPath(req.params.id),
+				csrfToken: getCsrfToken(req),
+			});
+		} catch (error) {
+			if (error instanceof ProductApiError && error.status === 404) {
+				res.status(404).render("admin-edit", {
+					title: "Edit product | Cue Corner",
+					loadError: "Product not found. It may have been deleted.",
+				});
+				return;
+			}
+			console.error("Failed to load product for editing", error);
+			res.status(502).render("admin-edit", {
+				title: "Edit product | Cue Corner",
+				loadError:
+					"Unable to load this product. Return to the catalogue and try again.",
+			});
+		}
+	});
+
+	router.post("/products/:id/edit", async (req, res) => {
+		const auth = req.session.auth;
+		if (!auth) {
+			res.redirect(303, "/login");
+			return;
+		}
+		const { values, fieldErrors } = validateProductEditInput(req.body);
+		const renderErrors = (
+			status: number,
+			formError: string,
+			errors: ProductEditFieldErrors = {},
+		) =>
+			res.status(status).render("admin-edit", {
+				title: "Edit product | Cue Corner",
+				values,
+				editPath: editPath(req.params.id),
+				fieldErrors: errors,
+				formError,
+				csrfToken: getCsrfToken(req),
+			});
+		if (!hasValidCsrfToken(req)) {
+			console.warn("Rejected product update with an invalid CSRF token");
+			renderErrors(
+				403,
+				"Invalid form session. Review your details and submit again.",
+			);
+			return;
+		}
+		if (Object.keys(fieldErrors).length > 0) {
+			renderErrors(400, "Please fix the errors below.", fieldErrors);
+			return;
+		}
+		try {
+			await productClient.update(req.params.id, values, auth.accessToken);
+			res.redirect(303, "/admin?updated=1");
+		} catch (error) {
+			if (error instanceof ProductApiError) {
+				if (error.status === 401) {
+					delete req.session.auth;
+					delete req.session.adminCsrfToken;
+					res.redirect(303, "/login");
+					return;
+				}
+				if (error.status === 403) {
+					res.status(403).render("admin", { title, notAllowed: true });
+					return;
+				}
+				if (error.status === 404) {
+					res.status(404).render("admin-edit", {
+						title: "Edit product | Cue Corner",
+						loadError: "Product not found. It may have been deleted.",
+					});
+					return;
+				}
+				if (error.status === 400) {
+					renderErrors(400, "Please fix the errors below.", error.fieldErrors);
+					return;
+				}
+			}
+			console.error("Failed to update product", error);
 			renderErrors(
 				502,
 				"We could not confirm that your product was saved. Check the catalogue before trying again.",

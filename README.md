@@ -60,6 +60,29 @@ The login form posts to the frontend's `POST /login`, which forwards JSON creden
 
 On success, the frontend regenerates the session ID and stores the access token, user details, role, and expiry server-side. Admins are redirected to `/admin`; ordinary users go to `/`. The header shows the signed-in name and a logout button. The browser receives only an HTTP-only, SameSite=Lax session-ID cookie, never the token. `POST /logout` destroys the session; expired sessions are cleared on the next request. There is no token refresh.
 
+### Password reset
+
+`/reset-pass` resets a password in two steps on one page:
+
+1. The user enters their email and safe word and presses **Submit**. The page script posts them to the frontend's `POST /reset-pass/verify`, which asks the backend to check them.
+2. If they are correct, the **New password** and **Confirm new password** fields appear and the email and safe word lock. If not, the page shows "The email or safe word is incorrect." and no new fields appear.
+3. Submitting the new password posts all four fields to `POST /reset-pass`. The frontend validates them (12-128 characters, both match), asks the backend to change the password, then redirects to `/login?reset=1`, which shows a confirmation.
+
+Without JavaScript, pressing **Submit** returns the form with all four fields visible and a prompt to fill in the new password, so the reset still works in one more step. The **Show hint** link (`GET /reset-pass/hint`) is unchanged.
+
+The frontend never stores the safe word or sends it back to the browser. It is sent to the backend twice, once to verify and once with the new password, so the backend never has to trust that the first check happened. Failures show generic messages; the log records only status codes.
+
+#### Backend contract
+
+Both calls are server-to-server JSON `POST` requests to `API_BASE_URL` with a five-second timeout. **The backend does not implement them yet.** Until it does, the page shows "We couldn't check your details right now. Please try again."
+
+| Endpoint | Request body | Responses |
+| --- | --- | --- |
+| `POST /api/reset-password/verify` | `{"email":"…","safeWord":"…"}` | `200` or `204`: safe word matches. `401`: unknown email or wrong safe word (the same response for both). `400`: malformed body. `429`: too many attempts. |
+| `POST /api/reset-password` | `{"email":"…","safeWord":"…","newPassword":"…"}` | `200` or `204`: password changed. `401`: unknown email or wrong safe word. `400` with `{"error":"…"}`: password rejected (the message is shown to the user). `429`: too many attempts. |
+
+The backend must check the safe word against its stored hash on **both** calls, hash the new password the way registration does, and never return either hash. Every request reaches the backend from the frontend server's address, so limit failed attempts per email, not only per IP.
+
 ### Admin dashboard
 
 #### Product creation (KAN-36)
@@ -89,6 +112,29 @@ Run `npm test -- tests/adminCreate.test.ts tests/admin.test.ts tests/shop.test.t
 The tests cover required fields, length/price boundaries, admin access, CSRF,
 backend errors and catalogue refreshes. No running backend is required.
 
+#### Product editing
+
+Select **Edit** beside a product on the admin dashboard to open
+`GET /admin/products/:id/edit`. The form loads the current name, description,
+category, price in pounds and stock directly from the backend. All five fields
+are required; text and price limits match product creation. Stock must be a whole
+number between `0` and `2147483647`.
+
+**Save changes** submits `POST /admin/products/:id/edit`. After checking admin
+access, the session-bound CSRF token and field validation, the frontend sends
+the complete set of fields to `PUT /api/products/:id`, with the JWT kept
+server-side. Success redirects to `/admin?updated=1` and reloads the catalogue.
+Cancel returns to the dashboard without saving.
+
+Validation errors preserve escaped values and show linked field messages.
+A missing/deleted product shows `404`; backend `401` clears the session and
+redirects to login, and `403` shows "Not allowed". Service failures and unexpected
+responses never claim success and advise checking the catalogue before retrying.
+Edit pages use `Cache-Control: no-store`.
+
+Run `npm test -- tests/adminEdit.test.ts tests/adminCreate.test.ts tests/admin.test.ts`
+to check editing and existing catalogue management without a running backend.
+
 #### Product deletion
 
 `GET /admin` shows product/category totals and a product table with Delete links.
@@ -106,8 +152,8 @@ Backend `401` clears the login state and redirects to login; `403` shows
 retryable error, never a success message. Admin pages are not cached.
 
 Empty catalogues show zero totals; catalogue failures show a retryable error
-rather than invented statistics. Product editing, order management and user
-management remain unavailable. Deletion requires the matching backend changes;
+rather than invented statistics. Order management and user management remain
+unavailable. Product management requires the matching backend changes;
 there is no database migration. Re-running the backend seed can restore seeded
 products.
 
@@ -191,6 +237,13 @@ The existing isolated tests remain alongside these integration tests to cover
 malformed responses, network failures, session-store failures, and expiry safely.
 Backend unavailability or failed account creation fails the real-backend tests.
 
+### Password reset tests
+
+Run `npm test -- tests/resetPassword.test.ts`; no backend is required. The tests
+inject a mock reset service into `createApp`, and also check the exact requests
+the client sends to the backend, the validation messages, and that the page
+scripts load together in one browser scope.
+
 ## Project structure
 
 ```
@@ -258,7 +311,7 @@ Environment variables are loaded from `.env` by [dotenv](https://github.com/motd
 | Variable | Required | Description |
 | --- | --- | --- |
 | `PORT` | yes | Port the service listens on. The service exits at startup if it is missing or invalid. |
-| `API_BASE_URL` | no | Backend base URL for login, registration, products, and cart. Takes precedence over `BACKEND_URL`. |
+| `API_BASE_URL` | no | Backend base URL for login, registration, password reset, products, and cart. Takes precedence over `BACKEND_URL`. |
 | `BACKEND_URL` | no | Backwards-compatible backend base URL. Defaults to `http://localhost:3000`; frontend `PORT` must be different. |
 | `SESSION_SECRET` | in production | Random secret used to sign session-ID cookies, not the backend JWT secret. Development uses an ephemeral random secret if omitted. |
 

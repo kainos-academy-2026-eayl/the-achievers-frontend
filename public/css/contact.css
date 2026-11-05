@@ -1,0 +1,243 @@
+/* Contact Us Page Styling */
+
+.contact-hero {
+	background: linear-gradient(135deg, #1a472a 0%, #2d5e45 100%);
+	color: white;
+	padding: 60px 0;
+	text-align: center;
+}
+
+.contact-hero-inner {
+	max-width: 800px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+.contact-hero-inner h1 {
+	font-size: clamp(2rem, 5vw, 3.5rem);
+	margin-bottom: 10px;
+	font-weight: 700;
+	text-align: center;
+}
+
+.contact-hero-sub {
+	font-size: clamp(1rem, 2.5vw, 1.5rem);
+	opacity: 0.95;
+	margin-bottom: 0;
+	text-align: center;
+}
+
+/* Introduction Section */
+.contact-intro {
+	background-color: #f9f9f9;
+	text-align: center;
+	padding-block: clamp(3.5rem, 8vw, 6rem);
+}
+
+.intro-text {
+	font-size: 1.1rem;
+	line-height: 1.8;
+	color: #333;
+	max-width: 800px;
+	margin: 0 auto;
+	text-align: center;
+}
+
+/* Contact Methods Grid */
+.contact-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+	gap: 2rem;
+	margin-top: 2rem;
+}
+
+.contact-card {
+	background: white;
+	border-radius: 8px;
+	overflow: hidden;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+	padding: 2rem;
+	text-align: center;
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.contact-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.contact-icon {
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	width: 60px;
+	height: 60px;
+	background-color: #f0f0f0;
+	border-radius: 8px;
+	margin-bottom: 1.5rem;
+	color: #1a472a;
+}
+
+.contact-icon svg {
+	width: 40px;
+	height: 40px;
+}
+
+.contact-content {
+	flex: 1;
+}
+
+.contact-method {
+	font-size: 1.3rem;
+	font-weight: 700;
+	margin-bottom: 0.5rem;
+	color: #1a472a;
+	text-align: center;
+}
+
+.contact-value {
+	font-size: 1rem;
+	line-height: 1.6;
+	color: #555;
+	margin-bottom: 0;
+	text-align: center;
+	word-break: break-word;
+}
+
+/* Response Times Section */
+.contact-methods {
+	text-align: center;
+}
+
+.contact-methods .section-title {
+	text-align: center;
+}
+
+.response-grid {
+	display: grid;
+	grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+	gap: 1.5rem;
+	margin-top: 2rem;
+}
+
+.response-card {
+	background: white;
+	padding: 2rem;
+	border-radius: 8px;
+	box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+	text-align: center;
+	transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.response-card:hover {
+	transform: translateY(-5px);
+	box-shadow: 0 4px 16px rgba(0, 0, 0, 0.15);
+}
+
+.response-card h3 {
+	font-size: 1.2rem;
+	color: #1a472a;
+	margin-bottom: 1rem;
+	font-weight: 700;
+	text-align: center;
+}
+
+.response-card p {
+	font-size: 0.95rem;
+	line-height: 1.6;
+	color: #555;
+	margin-bottom: 0;
+	text-align: center;
+}
+
+/* Center the CTA button */
+.contact-response {
+	text-align: center;
+}
+
+.contact-response .section-title {
+	text-align: center;
+}
+
+.cta {
+	text-align: center;
+	margin-bottom: 3rem;
+}
+
+.cta .btn {
+	display: inline-block;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+	.contact-hero {
+		padding: 40px 0;
+	}
+
+	.contact-hero-inner h1 {
+		font-size: 2rem;
+	}
+
+	.contact-hero-sub {
+		font-size: 1.1rem;
+	}
+
+	.contact-grid {
+		grid-template-columns: 1fr;
+		gap: 1.5rem;
+	}
+
+	.response-grid {
+		grid-template-columns: 1fr;
+		gap: 1rem;
+	}
+
+	.response-card {
+		padding: 1.5rem;
+	}
+}
+
+@media (max-width: 480px) {
+	.contact-hero {
+		padding: 30px 0;
+	}
+
+	.contact-hero-inner h1 {
+		font-size: 1.5rem;
+	}
+
+	.contact-hero-sub {
+		font-size: 0.95rem;
+	}
+
+	.intro-text {
+		font-size: 1rem;
+	}
+
+	.contact-card {
+		padding: 1.5rem;
+	}
+
+	.contact-method {
+		font-size: 1.1rem;
+	}
+
+	.contact-value {
+		font-size: 0.95rem;
+	}
+
+	.response-card {
+		padding: 1rem;
+	}
+
+	.response-card h3 {
+		font-size: 1rem;
+	}
+
+	.response-card p {
+		font-size: 0.9rem;
+	}
+}
