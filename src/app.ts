@@ -286,7 +286,11 @@ export function createApp(
 		res.set("Cache-Control", "no-store");
 		const raw = req.method === "POST" ? req.body?.email : req.query.email;
 		const email = typeof raw === "string" ? raw.trim() : "";
-		const renderHint = (status: number, hintMessage: string, hintError = true) =>
+		const renderHint = (
+			status: number,
+			hintMessage: string,
+			hintError = true,
+		) =>
 			res.status(status).render("reset-pass", {
 				title: "Reset Password | Cue Corner",
 				email,
@@ -294,7 +298,10 @@ export function createApp(
 				hintError,
 			});
 		if (!email) {
-			return renderHint(400, "Enter your email address above to see your hint.");
+			return renderHint(
+				400,
+				"Enter your email address above to see your hint.",
+			);
 		}
 		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
 			return renderHint(400, "Enter a valid email address.");
@@ -322,11 +329,16 @@ export function createApp(
 					: "";
 
 			if (backendResponse.status !== 200 && backendResponse.status !== 404) {
-				console.error(`Hint backend returned status ${backendResponse.status}.`);
+				console.error(
+					`Hint backend returned status ${backendResponse.status}.`,
+				);
 				return renderHint(502, "Unable to load your hint. Please try again.");
 			}
 			if (!Object.hasOwn(SAFE_WORD_QUESTIONS, hint)) {
-				return renderHint(404, "There is no account linked to that email. Use an email that is linked to an existing account.");
+				return renderHint(
+					404,
+					"There is no account linked to that email. Use an email that is linked to an existing account.",
+				);
 			}
 			return renderHint(200, SAFE_WORD_QUESTIONS[hint] as string, false);
 		} catch (error) {
