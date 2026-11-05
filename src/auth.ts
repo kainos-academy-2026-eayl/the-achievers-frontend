@@ -146,9 +146,15 @@ export function registerAuth(app: Express, backendUrl: string): void {
 		next();
 	});
 
-	app.get("/login", (_req, res) => {
+	app.get("/login", (req, res) => {
 		res.set("Cache-Control", "no-store");
-		res.render("login", { title: "Login | Cue Corner" });
+		res.render("login", {
+			title: "Login | Cue Corner",
+			loginMessage:
+				req.query.reset === "1"
+					? "Your password has been reset. Log in with your new password."
+					: undefined,
+		});
 	});
 
 	app.post("/login", async (req, res) => {

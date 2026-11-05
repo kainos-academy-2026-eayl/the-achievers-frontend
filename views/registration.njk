@@ -29,7 +29,7 @@
       <div class="auth-field">
         <label for="registration-password">Password</label>
         <input id="registration-password" name="password" type="password" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="password-hint" required>
-        <p class="auth-hint" id="password-hint">Must be at least 12 characters. <span class="password-count" id="password-count" aria-live="polite" hidden></span></p>
+        <p class="auth-hint" id="password-hint">Must be at least 12 characters.</p>
       </div>
 
       <div class="auth-field">
@@ -38,7 +38,7 @@
       </div>
 
       <div class="auth-field">
-        <label for="safe-word-hint">Safe Word Hint</label>
+        <label for="safe-word-hint">Security Question</label>
         <select id="safe-word-hint" name="safeWordHint" required>
           <option value="" disabled {{ 'selected' if not safeWordHint }}>Choose a hint</option>
           <option value="mothers-maiden-name" {{ 'selected' if safeWordHint == 'mothers-maiden-name' }}>What is your mother's maiden name?</option>
@@ -57,8 +57,7 @@
       <button class="btn btn-green" type="submit">Register</button>
     </form>
 
-    <p class="auth-switch">Already have an account? <a href="/login">Login</a></p>
+    <p class="auth-switch">Already have an account?<a href="/login">Login</a></p>
   </div>
   </section>
-  <script src="/js/password-counter.js" defer></script>
 {% endblock %}

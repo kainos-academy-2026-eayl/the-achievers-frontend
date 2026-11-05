@@ -1,5 +1,5 @@
 import request from "supertest";
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { createApp } from "../src/app";
 import { ProductService } from "../src/services/productService";
 
@@ -41,6 +41,8 @@ describe("GET /shop", () => {
         expect(response.text).toContain("A balanced maple cue.");
         expect(response.text).toContain("Pool Cues");
         expect(response.text).toContain("£89.99");
+        expect(response.text).toContain("Loading reviews...");
+        expect(response.text).not.toContain('data-product-review-count="12"');
     });
 
     it("shows stock status and disables adding out-of-stock products", async () => {
@@ -136,6 +138,34 @@ describe("GET /shop", () => {
 
         expect(response.status).toBe(502);
         expect(response.text).toContain("show products right now");
+    });
+});
+
+describe("GET /api/products/:productId/reviews", () => {
+    it("returns only the selected product's reviews and calculates its summary", async () => {
+        const listForProduct = vi.fn(async () => [
+            { productId: "p1", rating: 5, comment: "Excellent", firstName: "John" },
+            { productId: "p1", rating: 3, comment: "Good", firstName: "Sarah" },
+            { productId: "p2", rating: 1, comment: "Other product", firstName: "Alex" },
+        ]);
+        const app = createApp(
+            new ProductService({ getAll: async () => [validProduct] }),
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            undefined,
+            { listMine: async () => [], save: async () => { }, listForProduct },
+        );
+
+        const response = await request(app).get("/api/products/p1/reviews");
+
+        expect(response.status).toBe(200);
+        expect(listForProduct).toHaveBeenCalledWith("p1", undefined);
+        expect(response.body.reviews).toHaveLength(2);
+        expect(response.body.reviews.every((review: { productId: string; }) => review.productId === "p1")).toBe(true);
+        expect(response.body.averageRating).toBe(4);
+        expect(response.body.reviewCount).toBe(2);
     });
 });
 

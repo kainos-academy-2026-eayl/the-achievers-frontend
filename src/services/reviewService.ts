@@ -10,6 +10,14 @@ export interface ReviewViewModel {
 	comment: string;
 }
 
+export interface ProductReviewViewModel {
+	productId: string;
+	rating: number;
+	comment: string;
+	firstName: string;
+	date?: string;
+}
+
 export type ReviewFormResult =
 	| { success: true; data: { rating: number; comment: string } }
 	| {
@@ -76,7 +84,8 @@ export function parseReviewForm(body: unknown): ReviewFormResult {
 
 export class ReviewService {
 	constructor(
-		private readonly client: Pick<ReviewClient, "listMine" | "save">,
+		private readonly client: Pick<ReviewClient, "listMine" | "save"> &
+			Partial<Pick<ReviewClient, "listForProduct">>,
 	) {}
 
 	async listMine(accessToken: string): Promise<ReviewViewModel[]> {
@@ -85,6 +94,61 @@ export class ReviewService {
 			throw new Error("Unexpected reviews response format");
 		}
 		return data.map(mapReview);
+	}
+
+	async listForProduct(
+		productId: string,
+		accessToken?: string,
+	): Promise<ProductReviewViewModel[]> {
+		if (!this.client.listForProduct) {
+			throw new Error("Product reviews are unavailable");
+		}
+		const data = await this.client.listForProduct(productId, accessToken);
+		if (!Array.isArray(data)) {
+			throw new Error("Unexpected reviews response format");
+		}
+		return data.flatMap((raw): ProductReviewViewModel[] => {
+			if (!isRecord(raw) || raw.productId !== productId) return [];
+			const { rating, comment } = raw;
+			if (
+				!isValidRating(rating) ||
+				(comment !== null && typeof comment !== "string")
+			) {
+				return [];
+			}
+			const user = isRecord(raw.user) ? raw.user : {};
+			const reviewer = isRecord(raw.reviewer) ? raw.reviewer : {};
+			const name =
+				[
+					raw.firstName,
+					raw.name,
+					raw.userName,
+					raw.reviewerName,
+					user.name,
+					reviewer.name,
+				]
+					.find(
+						(value): value is string =>
+							typeof value === "string" && value.trim() !== "",
+					)
+					?.trim()
+					.split(/\s+/)[0] ?? "Customer";
+			const rawDate =
+				typeof raw.createdAt === "string" ? raw.createdAt : raw.date;
+			const date =
+				typeof rawDate === "string" && !Number.isNaN(Date.parse(rawDate))
+					? new Date(rawDate).toISOString()
+					: undefined;
+			return [
+				{
+					productId,
+					rating,
+					comment: comment ?? "",
+					firstName: name,
+					...(date ? { date } : {}),
+				},
+			];
+		});
 	}
 
 	async save(

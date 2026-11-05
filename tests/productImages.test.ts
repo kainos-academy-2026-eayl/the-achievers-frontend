@@ -270,6 +270,8 @@ describe("product image display", () => {
 		expect(response.text).toContain(
 			`src="/media/products/${product.id}/images/${imageId}"`,
 		);
+		expect(response.text).toContain('class="product-details-trigger"');
+		expect(response.text).toContain(`data-product-id="${product.id}"`);
 	});
 
 	it("proxies image bytes with no-cache and a fixed content type", async () => {

@@ -89,6 +89,9 @@
           {% for product in products %}
             <li>
               <article class="product-tile" aria-labelledby="product-{{ product.id }}">
+                <button class="product-details-trigger" type="button" data-product-id="{{ product.id }}" data-product-name="{{ product.name }}" data-product-price="{{ product.price }}" data-product-category="{{ product.category }}" data-product-description="{{ product.description }}" aria-haspopup="dialog" aria-label="View details for {{ product.name }}">
+                  <span class="visually-hidden">View product details</span>
+                </button>
                 <div class="product-image{% if product.imageUrl %} has-photo{% endif %}" aria-hidden="true">
                   {% if product.imageUrl %}
                     <img class="product-photo" src="{{ product.imageUrl }}" alt="" loading="lazy">
@@ -101,15 +104,8 @@
                   <p class="product-category">{{ product.category }}</p>
                   <h2 id="product-{{ product.id }}" class="product-name">{{ product.name }}</h2>
 
-                  <div class="product-rating">
-                    {% if product.rating is number %}
-                      <span class="stars" role="img" aria-label="Rated {{ product.rating }} out of 5">
-                        <span class="stars-fill" style="width: {{ product.ratingPercent }}%"></span>
-                      </span>
-                      <span class="review-count">({{ product.reviewCount }})</span>
-                    {% else %}
-                      <span class="review-count">No reviews yet</span>
-                    {% endif %}
+                  <div class="product-rating" data-product-rating aria-live="polite">
+                    <span class="review-count">Loading reviews...</span>
                   </div>
 
                   <p class="product-description">{{ product.description }}</p>
@@ -135,4 +131,29 @@
       </div>
     </div>
   </section>
+
+  <div class="product-drawer-backdrop" data-product-drawer hidden>
+    <section class="product-drawer" role="dialog" aria-modal="true" aria-labelledby="drawer-product-name" tabindex="-1">
+      <button class="drawer-close" type="button" aria-label="Close product details">&times;</button>
+      <div class="drawer-product-image"><img src="/css/images/cc-icon.png" alt="" data-drawer-image></div>
+      <p class="drawer-category" data-drawer-category></p>
+      <h2 id="drawer-product-name" data-drawer-name></h2>
+      <p class="drawer-price" data-drawer-price></p>
+      <div class="drawer-rating" aria-live="polite">
+        <span class="drawer-stars" data-drawer-stars aria-hidden="true"></span>
+        <span data-drawer-rating></span>
+        <span data-drawer-count></span>
+      </div>
+      <p class="drawer-description" data-drawer-description></p>
+      <section class="drawer-reviews" aria-labelledby="drawer-reviews-title">
+        <h3 id="drawer-reviews-title">Customer reviews</h3>
+        <p class="drawer-review-status" data-review-status role="status">Select a product to view reviews.</p>
+        <ul class="drawer-review-list" data-review-list></ul>
+      </section>
+    </section>
+  </div>
+{% endblock %}
+
+{% block scripts %}
+  <script src="/js/product-details.js" defer></script>
 {% endblock %}
