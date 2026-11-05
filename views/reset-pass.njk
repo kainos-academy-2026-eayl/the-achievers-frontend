@@ -8,15 +8,46 @@
   <section class="auth-page" aria-labelledby="reset-title">
   <div class="auth-card">
     <h1 id="reset-title">Reset your password</h1>
-    <p class="auth-notice" id="reset-notice">Enter the email address associated with your account. Demo only: this form does not send a reset email.</p>
+    <p class="auth-notice" id="reset-notice" role="{{ 'alert' if resetError else 'status' }}">{{ resetMessage | default("Enter your email and the safe word associated with your account.") }}</p>
+    {% if resetErrors %}
+      <ul class="auth-errors">
+        {% for error in resetErrors %}<li>{{ error }}</li>{% endfor %}
+      </ul>
+    {% endif %}
 
-    <form class="auth-form" aria-describedby="reset-notice" onsubmit="event.preventDefault()">
+    <form class="auth-form" id="reset-form" action="{{ '/reset-pass' if showNewPasswordFields else '/reset-pass/verify' }}" method="post" aria-describedby="reset-notice">
+
       <div class="auth-field">
-        <label for="reset-email">Email</label>
-        <input id="reset-email" name="email" type="email" autocomplete="email" required>
+        <label for="registration-email">Email</label>
+        <input id="registration-email" name="email" type="email" autocomplete="email" value="{{ email | default('') }}" {{ 'readonly' if showNewPasswordFields }} required>
       </div>
 
-      <button class="btn btn-green" type="submit">Send reset link</button>
+      <div class="auth-field">
+        <label for="safe-word">Safe Word{{ ' (enter it again to confirm)' if showNewPasswordFields }}</label>
+        <input id="safe-word" name="safeWord" type="password" autocomplete="off" required>
+      </div>
+
+      {% if showNewPasswordFields %}
+      <div class="auth-form-group" id="reset-new-password-fields">
+        <div class="auth-field">
+          <label for="reset-new-password">New password</label>
+          <input id="reset-new-password" name="newPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" aria-describedby="reset-new-password-hint" required>
+          <p class="auth-hint" id="reset-new-password-hint">Must be at least 12 characters.</p>
+        </div>
+
+        <div class="auth-field">
+          <label for="reset-confirm-password">Confirm new password</label>
+          <input id="reset-confirm-password" name="confirmPassword" type="password" autocomplete="new-password" minlength="12" maxlength="128" required>
+        </div>
+      </div>
+      {% endif %}
+
+      <button class="btn btn-green" id="reset-submit" type="submit">{{ 'Reset password' if showNewPasswordFields else 'Submit' }}</button>
+
+      <div class="reset-hint">
+        <button class="reset-hint-link" type="submit" formaction="/reset-pass/hint" formnovalidate aria-expanded="{{ 'true' if hintMessage else 'false' }}" aria-controls="reset-hint-text">Show hint</button>
+        {% if hintMessage %}<p class="auth-notice" id="reset-hint-text" role="{{ 'alert' if hintError else 'status' }}">{{ hintMessage }}</p>{% endif %}
+      </div>
     </form>
 
     <p class="auth-switch"><a href="/login">Back to login</a></p>

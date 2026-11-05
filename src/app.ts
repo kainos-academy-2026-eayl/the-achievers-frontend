@@ -5,22 +5,27 @@ import { CartClient } from "./clients/cartClient";
 import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
+import { ResetPasswordClient } from "./clients/resetPasswordClient";
 import { ReviewClient } from "./clients/reviewClient";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
-import { createContactRouter } from "./controllers/contactController";
-import { createTermsRouter } from "./controllers/termsController";
 import {
 	type CartOperations,
 	createCartRouter,
 	readCartId,
 } from "./controllers/cartController";
+import { createCheckoutRouter } from "./controllers/checkoutController";
+import { createContactRouter } from "./controllers/contactController";
+import { createOrderHistoryRouter } from "./controllers/orderHistoryController";
 import {
 	createProfileRouter,
 	type ProfileOperations,
 } from "./controllers/profileController";
-import { createCheckoutRouter } from "./controllers/checkoutController";
-import { createOrderHistoryRouter } from "./controllers/orderHistoryController";
+import { createTermsRouter } from "./controllers/termsController";
+import {
+	createResetPasswordRouter,
+	type ResetPasswordOperations,
+} from "./controllers/resetPasswordController";
 import { requireAuth } from "./middleware/authMiddleware";
 import { CartService } from "./services/cartService";
 import { CheckoutService } from "./services/checkoutService";
@@ -32,6 +37,15 @@ import {
 	ProductService,
 } from "./services/productService";
 import { ReviewService } from "./services/reviewService";
+
+const SAFE_WORD_QUESTIONS: Record<string, string> = {
+	"mothers-maiden-name": "What is your mother's maiden name?",
+	"favourite-movie": "What is your favourite movie?",
+	"first-pet": "What was your first pet's name?",
+	"childhood-friend": "What did you call your childhood bestfriend?",
+	holiday: "What is your dream holiday location?",
+};
+
 export function createApp(
 	productService: Pick<ProductService, "getAll"> = new ProductService(
 		new ProductClient(
@@ -71,6 +85,11 @@ export function createApp(
 			"http://localhost:3000",
 	),
 	checkoutService: CheckoutService = new CheckoutService(),
+	resetPasswordService: ResetPasswordOperations = new ResetPasswordClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
+	),
 	reviewService: Pick<ReviewService, "listMine" | "save"> = new ReviewService(
 		new ReviewClient(
 			process.env.API_BASE_URL ??
@@ -166,10 +185,11 @@ export function createApp(
 		),
 	);
 
-	app.use("/admin", createAdminRouter(productService, adminProducts));
 	app.use("/about", createAboutRouter());
 	app.use("/contact", createContactRouter());
 	app.use("/terms", createTermsRouter());
+	app.use("/admin", createAdminRouter(productService, adminProducts));
+	app.use("/reset-pass", createResetPasswordRouter(resetPasswordService));
 
 	app.get("/", async (_req: Request, res: Response) => {
 		const title = "Cue Corner | Pool & Snooker Equipment";
@@ -264,6 +284,74 @@ export function createApp(
 		res.render("reset-pass", { title: "Reset Password | Cue Corner" });
 	});
 
+	// POST so the other form fields never end up in the URL; GET stays for direct links.
+	const showResetHint = async (req: Request, res: Response) => {
+		res.set("Cache-Control", "no-store");
+		const raw = req.method === "POST" ? req.body?.email : req.query.email;
+		const email = typeof raw === "string" ? raw.trim() : "";
+		const renderHint = (
+			status: number,
+			hintMessage: string,
+			hintError = true,
+		) =>
+			res.status(status).render("reset-pass", {
+				title: "Reset Password | Cue Corner",
+				email,
+				hintMessage,
+				hintError,
+			});
+		if (!email) {
+			return renderHint(
+				400,
+				"Enter your email address above to see your hint.",
+			);
+		}
+		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+			return renderHint(400, "Enter a valid email address.");
+		}
+
+		try {
+			const url = new URL(
+				"/api/safe-word-hint",
+				process.env.API_BASE_URL ??
+					process.env.BACKEND_URL ??
+					"http://localhost:3000",
+			);
+			url.searchParams.set("email", email);
+			const backendResponse = await fetch(url, {
+				signal: AbortSignal.timeout(5000),
+			});
+			const data: unknown =
+				backendResponse.status === 200 ? await backendResponse.json() : null;
+			const hint =
+				typeof data === "object" &&
+				data !== null &&
+				"safeWordHint" in data &&
+				typeof data.safeWordHint === "string"
+					? data.safeWordHint
+					: "";
+
+			if (backendResponse.status !== 200 && backendResponse.status !== 404) {
+				console.error(
+					`Hint backend returned status ${backendResponse.status}.`,
+				);
+				return renderHint(502, "Unable to load your hint. Please try again.");
+			}
+			if (!Object.hasOwn(SAFE_WORD_QUESTIONS, hint)) {
+				return renderHint(
+					404,
+					"There is no account linked to that email. Use an email that is linked to an existing account.",
+				);
+			}
+			return renderHint(200, SAFE_WORD_QUESTIONS[hint] as string, false);
+		} catch (error) {
+			console.error("Unable to reach the hint backend:", error);
+			return renderHint(502, "Unable to load your hint. Please try again.");
+		}
+	};
+	app.get("/reset-pass/hint", showResetHint);
+	app.post("/reset-pass/hint", showResetHint);
+
 	app.get("/registration", (_req: Request, res: Response) => {
 		res.render("registration", { title: "Register | Cue Corner" });
 	});
@@ -275,13 +363,7 @@ export function createApp(
 		const trimmedEmail = typeof email === "string" ? email.trim() : "";
 		const selectedHint =
 			typeof safeWordHint === "string" &&
-			[
-				"mothers-maiden-name",
-				"favourite-movie",
-				"first-pet",
-				"childhood-friend",
-				"holiday",
-			].includes(safeWordHint)
+			Object.hasOwn(SAFE_WORD_QUESTIONS, safeWordHint)
 				? safeWordHint
 				: "";
 
