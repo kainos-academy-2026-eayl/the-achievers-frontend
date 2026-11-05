@@ -5,8 +5,8 @@ import { CartClient } from "./clients/cartClient";
 import { OrderClient } from "./clients/orderClient";
 import { ProductClient } from "./clients/productClient";
 import { ProfileClient } from "./clients/profileClient";
+import { ReviewApiError, ReviewClient } from "./clients/reviewClient";
 import { ResetPasswordClient } from "./clients/resetPasswordClient";
-import { ReviewClient } from "./clients/reviewClient";
 import { createAdminRouter } from "./controllers/adminController";
 import { createAboutRouter } from "./controllers/aboutController";
 import {
@@ -27,6 +27,7 @@ import {
 	type ResetPasswordOperations,
 } from "./controllers/resetPasswordController";
 import { requireAuth } from "./middleware/authMiddleware";
+import { isValidEmail } from "./helpers/resetPasswordFormHelper";
 import { CartService } from "./services/cartService";
 import { CheckoutService } from "./services/checkoutService";
 import { OrderService } from "./services/orderService";
@@ -85,17 +86,18 @@ export function createApp(
 			"http://localhost:3000",
 	),
 	checkoutService: CheckoutService = new CheckoutService(),
-	resetPasswordService: ResetPasswordOperations = new ResetPasswordClient(
-		process.env.API_BASE_URL ??
-			process.env.BACKEND_URL ??
-			"http://localhost:3000",
-	),
-	reviewService: Pick<ReviewService, "listMine" | "save"> = new ReviewService(
+	reviewService: Pick<ReviewService, "listMine" | "save"> &
+		Partial<Pick<ReviewService, "listForProduct">> = new ReviewService(
 		new ReviewClient(
 			process.env.API_BASE_URL ??
 				process.env.BACKEND_URL ??
 				"http://localhost:3000",
 		),
+	),
+	resetPasswordService: ResetPasswordOperations = new ResetPasswordClient(
+		process.env.API_BASE_URL ??
+			process.env.BACKEND_URL ??
+			"http://localhost:3000",
 	),
 ): Express {
 	const app = express();
@@ -280,6 +282,34 @@ export function createApp(
 		}
 	});
 
+	app.get("/api/products/:productId/reviews", async (req, res) => {
+		res.set("Cache-Control", "no-store");
+		if (!reviewService.listForProduct) {
+			return res.status(503).json({ error: "Reviews are unavailable." });
+		}
+		try {
+			const reviews = (
+				await reviewService.listForProduct(
+					req.params.productId,
+					req.session.auth?.accessToken,
+				)
+			).filter((review) => review.productId === req.params.productId);
+			const averageRating = reviews.length
+				? reviews.reduce((total, review) => total + review.rating, 0) /
+					reviews.length
+				: null;
+			return res.json({ reviews, averageRating, reviewCount: reviews.length });
+		} catch (error) {
+			if (error instanceof ReviewApiError && error.status === 401) {
+				return res
+					.status(401)
+					.json({ error: "Sign in to view product reviews." });
+			}
+			console.error("Failed to load product reviews", error);
+			return res.status(502).json({ error: "Reviews could not be loaded." });
+		}
+	});
+
 	app.get("/reset-pass", (_req: Request, res: Response) => {
 		res.render("reset-pass", { title: "Reset Password | Cue Corner" });
 	});
@@ -306,7 +336,7 @@ export function createApp(
 				"Enter your email address above to see your hint.",
 			);
 		}
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+		if (!isValidEmail(email)) {
 			return renderHint(400, "Enter a valid email address.");
 		}
 
@@ -373,7 +403,7 @@ export function createApp(
 		}
 		if (!trimmedEmail) {
 			errors.push("Enter your email address.");
-		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+		} else if (!isValidEmail(trimmedEmail)) {
 			errors.push("Enter a valid email address, for example name@example.com.");
 		}
 		if (typeof password !== "string" || !password) {

@@ -31,6 +31,7 @@ function setup() {
         undefined,
         undefined,
         undefined,
+        undefined,
         resetPasswords,
     );
     return { app, resetPasswords };
@@ -100,6 +101,7 @@ describe("POST /reset-pass/verify", () => {
     it.each([
         [{ email: "", safeWord }, "Enter your email address."],
         [{ email: "nope", safeWord }, "Enter a valid email address, for example name@example.com."],
+        [{ email: `${"a".repeat(250)}@example.com`, safeWord }, "Enter a valid email address, for example name@example.com."],
         [{ email, safeWord: "" }, "Enter your safe word."],
         [{ email, safeWord: "   " }, "Enter your safe word."],
         [{ email }, "Enter your safe word."],
@@ -146,6 +148,29 @@ describe("POST /reset-pass/verify", () => {
 
         expect(response.status).toBe(429);
         expect(response.text).toContain("Too many attempts");
+    });
+
+    it("limits repeated safe word checks from one client", async () => {
+        const { app, resetPasswords } = setup();
+        resetPasswords.verifySafeWord.mockResolvedValue(false);
+        const agent = request.agent(app);
+
+        for (let attempt = 0; attempt < 5; attempt += 1) {
+            const response = await agent
+                .post("/reset-pass/verify")
+                .type("form")
+                .send({ email, safeWord: "wrong" });
+            expect(response.status).toBe(401);
+        }
+
+        const limitedResponse = await agent
+            .post("/reset-pass/verify")
+            .type("form")
+            .send({ email, safeWord: "wrong" });
+
+        expect(limitedResponse.status).toBe(429);
+        expect(limitedResponse.text).toContain("Too many attempts");
+        expect(resetPasswords.verifySafeWord).toHaveBeenCalledTimes(5);
     });
 
     it.each([

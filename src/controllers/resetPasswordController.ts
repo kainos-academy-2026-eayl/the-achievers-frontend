@@ -1,4 +1,5 @@
 import { type Request, type Response, Router } from "express";
+import { rateLimit } from "express-rate-limit";
 import {
 	ResetPasswordApiError,
 	type ResetPasswordClient,
@@ -19,6 +20,8 @@ const title = "Reset Password | Cue Corner";
 const INCORRECT_DETAILS = "The email or safe word is incorrect.";
 const TOO_MANY_ATTEMPTS =
 	"Too many attempts. Please wait a minute and try again.";
+const MAX_VERIFICATION_ATTEMPTS = 5;
+const VERIFICATION_WINDOW_MS = 60_000;
 
 type Failure = { status: number; message: string };
 
@@ -44,6 +47,21 @@ export function createResetPasswordRouter(
 	resetPasswords: ResetPasswordOperations,
 ): Router {
 	const router = Router();
+	const verificationRateLimit = rateLimit({
+		windowMs: VERIFICATION_WINDOW_MS,
+		limit: MAX_VERIFICATION_ATTEMPTS,
+		standardHeaders: "draft-8",
+		legacyHeaders: false,
+		handler: (req, res) => {
+			const form = readResetPasswordForm(req.body ?? {});
+			return res.status(429).render("reset-pass", {
+				title,
+				email: form.email,
+				resetError: true,
+				resetMessage: TOO_MANY_ATTEMPTS,
+			});
+		},
+	});
 
 	router.use((_req: Request, res: Response, next) => {
 		res.set("Cache-Control", "no-store");
@@ -51,45 +69,49 @@ export function createResetPasswordRouter(
 	});
 
 	// Step one: check the email and safe word before showing the new password fields.
-	router.post("/verify", async (req: Request, res: Response) => {
-		const form = readResetPasswordForm(req.body ?? {});
-		const renderError = (status: number, message: string) =>
-			res.status(status).render("reset-pass", {
-				title,
-				email: form.email,
-				resetError: true,
-				resetMessage: message,
-			});
-		const [firstError] = validateSafeWordCheck(form);
-		if (firstError) {
-			renderError(400, firstError);
-			return;
-		}
-
-		try {
-			const isVerified = await resetPasswords.verifySafeWord(
-				form.email,
-				form.safeWord,
-			);
-			if (!isVerified) {
-				renderError(401, INCORRECT_DETAILS);
+	router.post(
+		"/verify",
+		verificationRateLimit,
+		async (req: Request, res: Response) => {
+			const form = readResetPasswordForm(req.body ?? {});
+			const renderError = (status: number, message: string) =>
+				res.status(status).render("reset-pass", {
+					title,
+					email: form.email,
+					resetError: true,
+					resetMessage: message,
+				});
+			const [firstError] = validateSafeWordCheck(form);
+			if (firstError) {
+				renderError(400, firstError);
 				return;
 			}
-			res.render("reset-pass", {
-				title,
-				email: form.email,
-				showNewPasswordFields: true,
-				resetMessage:
-					"Your details are correct. Enter your safe word again and choose a new password.",
-			});
-		} catch (error) {
-			const failure = describeFailure(
-				error,
-				"We couldn't check your details right now. Please try again.",
-			);
-			renderError(failure.status, failure.message);
-		}
-	});
+
+			try {
+				const isVerified = await resetPasswords.verifySafeWord(
+					form.email,
+					form.safeWord,
+				);
+				if (!isVerified) {
+					renderError(401, INCORRECT_DETAILS);
+					return;
+				}
+				res.render("reset-pass", {
+					title,
+					email: form.email,
+					showNewPasswordFields: true,
+					resetMessage:
+						"Your details are correct. Enter your safe word again and choose a new password.",
+				});
+			} catch (error) {
+				const failure = describeFailure(
+					error,
+					"We couldn't check your details right now. Please try again.",
+				);
+				renderError(failure.status, failure.message);
+			}
+		},
+	);
 
 	router.post("/", async (req: Request, res: Response) => {
 		const form = readResetPasswordForm(req.body ?? {});

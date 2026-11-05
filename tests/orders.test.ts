@@ -116,8 +116,8 @@ function setup() {
 		orders,
 		undefined,
 		undefined,
-		undefined,
 		reviews,
+		undefined,
 	);
 	return { agent: request.agent(app), cart, orders, products, reviews };
 }

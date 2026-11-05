@@ -48,6 +48,24 @@ export class ReviewClient {
 		return this.request(accessToken, "GET", "/api/reviews/me");
 	}
 
+	async listForProduct(
+		productId: string,
+		accessToken?: string,
+	): Promise<unknown> {
+		const response = await fetch(
+			new URL(`/api/reviews/${encodeURIComponent(productId)}`, this.baseUrl),
+			{
+				headers: accessToken ? { Authorization: `Bearer ${accessToken}` } : {},
+				signal: AbortSignal.timeout(5000),
+			},
+		);
+		const data: unknown = await response.json().catch(() => undefined);
+		if (!response.ok) {
+			throw new ReviewApiError(response.status, "Reviews could not be loaded.");
+		}
+		return data;
+	}
+
 	// Backend upserts on (userId, productId) and recalculates Product.rating/reviewCount.
 	save(
 		accessToken: string,

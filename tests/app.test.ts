@@ -288,6 +288,17 @@ describe('GET /reset-pass/hint', () => {
         expect(fetchSpy).not.toHaveBeenCalled();
     });
 
+    it('rejects an overlong email without calling the backend', async () => {
+        const fetchSpy = vi.spyOn(globalThis, 'fetch');
+
+        const response = await request(createApp())
+            .get('/reset-pass/hint')
+            .query({ email: `${'a'.repeat(250)}@example.com` });
+
+        expect(response.status).toBe(400);
+        expect(fetchSpy).not.toHaveBeenCalled();
+    });
+
     it('returns 404 when the backend has no hint for the email', async () => {
         vi.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 404 }));
 
