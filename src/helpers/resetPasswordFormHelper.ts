@@ -1,7 +1,18 @@
-const EMAIL_PATTERN = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LENGTH = 12;
 const MAX_PASSWORD_LENGTH = 128;
 const MAX_SAFE_WORD_LENGTH = 128;
+
+export function isValidEmail(email: string): boolean {
+	if (email.length > 254) return false;
+	for (const character of email) {
+		if (character.trim() === "") return false;
+	}
+	const atIndex = email.indexOf("@");
+	if (atIndex <= 0 || atIndex !== email.lastIndexOf("@")) return false;
+	const domain = email.slice(atIndex + 1);
+	const dotIndex = domain.lastIndexOf(".");
+	return dotIndex > 0 && dotIndex < domain.length - 1;
+}
 
 export type ResetPasswordForm = {
 	email: string;
@@ -31,7 +42,7 @@ export function validateSafeWordCheck(
 	const errors: string[] = [];
 	if (!form.email) {
 		errors.push("Enter your email address.");
-	} else if (!EMAIL_PATTERN.test(form.email)) {
+	} else if (!isValidEmail(form.email)) {
 		errors.push("Enter a valid email address, for example name@example.com.");
 	}
 	if (!form.safeWord.trim()) {

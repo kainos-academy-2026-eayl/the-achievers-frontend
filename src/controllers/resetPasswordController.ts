@@ -19,8 +19,11 @@ const title = "Reset Password | Cue Corner";
 const INCORRECT_DETAILS = "The email or safe word is incorrect.";
 const TOO_MANY_ATTEMPTS =
 	"Too many attempts. Please wait a minute and try again.";
+const MAX_VERIFICATION_ATTEMPTS = 5;
+const VERIFICATION_WINDOW_MS = 60_000;
 
 type Failure = { status: number; message: string };
+type VerificationAttempt = { count: number; expiresAt: number };
 
 function describeFailure(error: unknown, fallbackMessage: string): Failure {
 	if (error instanceof ResetPasswordApiError) {
@@ -44,6 +47,25 @@ export function createResetPasswordRouter(
 	resetPasswords: ResetPasswordOperations,
 ): Router {
 	const router = Router();
+	const verificationAttempts = new Map<string, VerificationAttempt>();
+
+	const isRateLimited = (clientId: string) => {
+		const now = Date.now();
+		let attempt = verificationAttempts.get(clientId);
+		if (!attempt || now >= attempt.expiresAt) {
+			if (!attempt && verificationAttempts.size >= 10_000) {
+				const oldestClientId = verificationAttempts.keys().next().value;
+				if (oldestClientId !== undefined) {
+					verificationAttempts.delete(oldestClientId);
+				}
+			}
+			attempt = { count: 0, expiresAt: now + VERIFICATION_WINDOW_MS };
+		}
+		attempt.count += 1;
+		verificationAttempts.delete(clientId);
+		verificationAttempts.set(clientId, attempt);
+		return attempt.count > MAX_VERIFICATION_ATTEMPTS;
+	};
 
 	router.use((_req: Request, res: Response, next) => {
 		res.set("Cache-Control", "no-store");
@@ -53,6 +75,14 @@ export function createResetPasswordRouter(
 	// Step one: check the email and safe word before showing the new password fields.
 	router.post("/verify", async (req: Request, res: Response) => {
 		const form = readResetPasswordForm(req.body ?? {});
+		if (isRateLimited(req.ip ?? req.socket.remoteAddress ?? "unknown")) {
+			return res.status(429).render("reset-pass", {
+				title,
+				email: form.email,
+				resetError: true,
+				resetMessage: TOO_MANY_ATTEMPTS,
+			});
+		}
 		const renderError = (status: number, message: string) =>
 			res.status(status).render("reset-pass", {
 				title,

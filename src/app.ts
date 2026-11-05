@@ -27,6 +27,7 @@ import {
 	type ResetPasswordOperations,
 } from "./controllers/resetPasswordController";
 import { requireAuth } from "./middleware/authMiddleware";
+import { isValidEmail } from "./helpers/resetPasswordFormHelper";
 import { CartService } from "./services/cartService";
 import { CheckoutService } from "./services/checkoutService";
 import { OrderService } from "./services/orderService";
@@ -335,7 +336,7 @@ export function createApp(
 				"Enter your email address above to see your hint.",
 			);
 		}
-		if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email)) {
+		if (!isValidEmail(email)) {
 			return renderHint(400, "Enter a valid email address.");
 		}
 
@@ -402,7 +403,7 @@ export function createApp(
 		}
 		if (!trimmedEmail) {
 			errors.push("Enter your email address.");
-		} else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(trimmedEmail)) {
+		} else if (!isValidEmail(trimmedEmail)) {
 			errors.push("Enter a valid email address, for example name@example.com.");
 		}
 		if (typeof password !== "string" || !password) {
