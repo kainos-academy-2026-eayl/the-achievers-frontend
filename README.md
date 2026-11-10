@@ -172,6 +172,25 @@ Registration sends `name`, `email`, `password`, `safeWordHint`, and `safeWord` a
 
 Use `npm ci` rather than `npm install`. It installs the exact versions recorded in `package-lock.json`, so everyone on the team runs identical dependencies. Use `npm install` only when you are deliberately adding or upgrading a package.
 
+## Running in Docker
+
+The [Dockerfile](Dockerfile) builds the app with esbuild and runs `npm start` on port `3002` in production mode, which requires a strong `SESSION_SECRET` (at least 32 characters).
+
+```sh
+docker build -t achievers-frontend .
+docker run -d --name achievers-frontend -p 3002:3002 \
+  -e API_BASE_URL=http://host.docker.internal:3000 \
+  -e SESSION_SECRET="$(openssl rand -hex 32)" \
+  achievers-frontend
+curl http://localhost:3002/health
+# {"status":"ok","uptime":2.98}
+```
+
+- Inside the container, `localhost` is the container itself, so use `host.docker.internal` to reach a backend running on your machine.
+- The Dockerfile uses `COPY . .`. Without a `.dockerignore`, your host `node_modules` overwrites the container's Linux install and the build fails with `esbuild: Exec format error`. Local `.env` files would also be copied into the build stage. Build from a clean checkout (for example `git archive HEAD | tar -x -C "$(mktemp -d)"`) or exclude `node_modules` and `.env*`.
+- Sessions use an in-memory store, so restarting the container signs everyone out.
+- Stop and remove the container with `docker rm -f achievers-frontend`.
+
 ## Making it your own
 
 After clicking **Use this template** on GitHub and creating your own repository:
