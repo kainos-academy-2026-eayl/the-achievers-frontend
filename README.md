@@ -187,7 +187,7 @@ curl http://localhost:3002/health
 ```
 
 - Inside the container, `localhost` is the container itself, so use `host.docker.internal` to reach a backend running on your machine.
-- The Dockerfile uses `COPY . .`. Without a `.dockerignore`, your host `node_modules` overwrites the container's Linux install and the build fails with `esbuild: Exec format error`. Local `.env` files would also be copied into the build stage. Build from a clean checkout (for example `git archive HEAD | tar -x -C "$(mktemp -d)"`) or exclude `node_modules` and `.env*`.
+- The Dockerfile uses `COPY . .`, so [.dockerignore](.dockerignore) excludes `node_modules`, `dist`, `.git`, `.env*`, `code_reviews`, and `npm-debug.log*` from the build context. Without it, your host `node_modules` overwrites the container's Linux install and the build fails with `esbuild: Exec format error`, and local `.env` files would be copied into the image.
 - Sessions use an in-memory store, so restarting the container signs everyone out.
 - Stop and remove the container with `docker rm -f achievers-frontend`.
 
