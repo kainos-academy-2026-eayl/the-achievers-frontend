@@ -1,7 +1,13 @@
 node_modules
 dist
 .git
+.github
 .env
 .env.*
-code_reviews
-npm-debug.log*
+code_reviews;
+npm - debug.log *
+tests
+**;/*.md
+biome.json
+.gitignore
+.nvmrc
