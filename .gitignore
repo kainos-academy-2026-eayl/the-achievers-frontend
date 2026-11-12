@@ -2,3 +2,5 @@ node_modules
 dist/
 .env    
 code_reviews/
+my-infrastructure/terraform.tfstate
+my-infrastructure/terraform.tfstate.backup
