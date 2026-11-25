@@ -112,6 +112,14 @@ export function registerAuth(app: Express, backendUrl: string): void {
 		path: "/",
 	};
 
+	if (production) {
+		// The Container Apps ingress terminates HTTPS and forwards plain HTTP.
+		// Trusting exactly that one hop lets Express see the original protocol
+		// from X-Forwarded-Proto, which express-session needs to send a Secure
+		// cookie, without trusting forwarded headers from any further hops.
+		app.set("trust proxy", 1);
+	}
+
 	app.use(
 		session({
 			name: cookieName,
