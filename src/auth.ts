@@ -112,6 +112,12 @@ export function registerAuth(app: Express, backendUrl: string): void {
 		path: "/",
 	};
 
+	if (production) {
+		// Azure terminates HTTPS at its ingress proxy. Without trusting it, every
+		// request looks like plain HTTP and the secure session cookie is never sent.
+		app.set("trust proxy", 1);
+	}
+
 	app.use(
 		session({
 			name: cookieName,

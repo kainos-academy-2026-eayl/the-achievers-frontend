@@ -416,4 +416,21 @@ describe("Login", () => {
 			"SESSION_SECRET must be set in production",
 		);
 	});
+
+	it("sets a secure session cookie behind an HTTPS proxy in production", async () => {
+		vi.stubEnv("NODE_ENV", "production");
+		vi.stubEnv("SESSION_SECRET", "test-session-secret-for-proxy-login");
+		mockLogin();
+
+		const response = await request(createApp())
+			.post("/login")
+			.set("X-Forwarded-Proto", "https")
+			.type("form")
+			.send(credentials);
+
+		expect(response.status).toBe(303);
+		const cookie = String(response.headers["set-cookie"]);
+		expect(cookie).toContain("cue-corner.sid=");
+		expect(cookie).toContain("Secure");
+	});
 });
